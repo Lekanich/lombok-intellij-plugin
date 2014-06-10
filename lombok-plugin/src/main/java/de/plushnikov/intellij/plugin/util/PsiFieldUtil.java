@@ -1,11 +1,20 @@
 package de.plushnikov.intellij.plugin.util;
 
+import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiModifierList;
+import lombok.experimental.FieldDefaults;
+import lombok.experimental.NonFinal;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
+
+import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.findAnnotation;
+import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.getAnnotationValue;
+import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.isAnnotatedWith;
 
 /**
  * @author Plushnikov Michail
@@ -31,4 +40,16 @@ public class PsiFieldUtil {
     return filterdFields;
   }
 
+  public static boolean isFinal(@NotNull PsiField psiField) {
+    if (psiField.getModifierList().hasModifierProperty(PsiModifier.FINAL)) return true;
+    PsiClass containingClass = psiField.getContainingClass();
+    if (containingClass == null) return false;
+
+    if (isAnnotatedWith(psiField, NonFinal.class)) return false;
+
+    PsiAnnotation annotation = findAnnotation(containingClass, FieldDefaults.class);
+    if (annotation == null) return false;
+
+    return getAnnotationValue(annotation, "makeFinal", Boolean.class);
+  }
 }

@@ -3,7 +3,7 @@
   <id>Lombook Plugin</id>
   <name>Lombok Plugin</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>0.8.7</version>
+  <version>1.0.12</version>
 
   <idea-version since-build="133.00"/>
 
@@ -39,6 +39,11 @@
     <lang.structureViewExtension implementation="de.plushnikov.intellij.plugin.extension.LombokStructureViewExtension"/>
 
     <daemon.highlightInfoFilter implementation="de.plushnikov.intellij.plugin.extension.LombokHighlightErrorFilter"/>
+
+    <completion.contributor language="JAVA" id="lombokContributor" implementationClass="de.plushnikov.intellij.plugin.extension.LombokCompletionContributor"
+                            order="last, before legacy, before default, before javaClassName, before javaLegacy"/>
+    <completion.contributor language="JAVA" id="primitiveLombokContributor" implementationClass="de.plushnikov.intellij.plugin.extension.LombokPrimitiveCompletionContributor"
+                            order="last, before legacy, before default, before javaClassName, before lombokContributor"/>
   </extensions>
 
   <extensions defaultExtensionNs="Lombook Plugin">
@@ -72,6 +77,11 @@
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.DelegateMethodProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderClassMethodProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderMethodProcessor"/>
+
+    <!--<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ValMethodProcessor"/>-->
+    <!--<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ValFieldProcessor"/>-->
+    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodProcessor"/>
 
     <!-- lombok-pg-->
     <processor implementation="de.plushnikov.intellij.plugin.processor_pg.clazz.FluentSetterProcessor"/>
@@ -170,6 +180,55 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.0.12
+				<ol>
+				    <li>Fixed ExtensionMethods. It works with methods with multi parameters.</li>
+				    <li>Fixed Contributor order. Bug=@version</li>
+				</ol>
+			</li>
+		<li>1.0.11
+				<ol>
+				    <li>Fixed FieldDefaults. Cast exception PsiNameValuePair to PsiReference</li>
+				</ol>
+			</li>
+		<li>1.0.10
+				<ol>
+				    <li>Fixed FieldDefaults. Access fields</li>
+				    <li>val support off</li>
+				    <!--<li>Known bug. Sometimes generated methods are converted to non-existent. The cause is not yet known.</li>-->
+				    <!--<li>Added val support. Experimental. Known bug. If a val initialized class has the same methods, navigation will be implemented in the first that fell. </li>-->
+				</ol>
+			</li>
+		<li>1.0.9
+				<ol>
+				    <li>Fixed LombokInspection (Bug marked all generated methods)</li>
+				</ol>
+			</li>
+		<li>1.0.7
+				<ol>
+				    <li>Fixed generic array types </li>
+				    <li>Added simple support primitive types </li>
+				    <li>Known bug. @ExtensionMethods. Not supported complex generics like <T extends Comparable<? super Comparable>> (fixed erase generic)</li>
+				</ol>
+			</li>
+		<li>1.0.6
+				<ol>
+				    <li>Fixed JavaCompletionContributor </li>
+				</ol>
+			</li>
+		<li>1.0.5
+				<ol>
+				    <li>Added support final in FieldDefaults </li>
+				    <li>Added partly support ExtensionMethods </li>
+				    <li>Known bug. @ExtensionMethods. With multiple methods with the same name, navigation will be implemented in the first that fell. </li>
+				</ol>
+			</li>
+		<li>1.0.3
+				<ol>
+				    <li>Added support FieldDefaults </li>
+				    <li>Fixed FieldDefaults with keyword</li>
+				</ol>
+			</li>
 		<li>0.8.7
 				<ol>
 				    <li>Fixed issue 104(on GoogleCode):	Intellij reports unused field with @Getter and @Setter</li>

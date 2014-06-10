@@ -22,6 +22,7 @@ import de.plushnikov.intellij.plugin.util.LombokProcessorUtil;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
 import de.plushnikov.intellij.plugin.util.PsiElementUtil;
+import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -127,7 +128,7 @@ public abstract class AbstractConstructorClassProcessor extends AbstractClassPro
         // skip static fields
         addField &= !modifierList.hasModifierProperty(PsiModifier.STATIC);
         // skip initialized final fields
-        addField &= !(null != psiField.getInitializer() && modifierList.hasModifierProperty(PsiModifier.FINAL));
+        addField &= !(null != psiField.getInitializer() && PsiFieldUtil.isFinal(psiField));
       }
 
       if (addField) {

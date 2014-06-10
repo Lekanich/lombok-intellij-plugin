@@ -13,6 +13,7 @@ import de.plushnikov.intellij.plugin.processor.field.SetterFieldProcessor;
 import de.plushnikov.intellij.plugin.thirdparty.LombokUtils;
 import de.plushnikov.intellij.plugin.util.LombokProcessorUtil;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
+import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
@@ -79,7 +80,7 @@ public class SetterProcessor extends AbstractClassProcessor {
       PsiModifierList modifierList = psiField.getModifierList();
       if (null != modifierList) {
         //Skip final fields.
-        createSetter = !modifierList.hasModifierProperty(PsiModifier.FINAL);
+        createSetter = !PsiFieldUtil.isFinal(psiField);
         //Skip static fields.
         createSetter &= !modifierList.hasModifierProperty(PsiModifier.STATIC);
         //Skip fields having Setter annotation already

@@ -22,7 +22,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Plushnikov Michail
@@ -195,5 +197,25 @@ public class PsiClassUtil {
       }
     }
     return null;
+  }
+
+  public static boolean hasParent(@NotNull PsiClass clazz, @NotNull PsiClass classParent) {
+    return getAllParents(clazz).contains(classParent);
+  }
+
+  @NotNull
+  public static Set<PsiClass> getAllParents(@NotNull PsiClass clazz) {
+    return getAllParents(clazz, new HashSet<PsiClass>());
+  }
+
+  @NotNull
+  public static Set<PsiClass> getAllParents(@NotNull PsiClass clazz, @NotNull Set<PsiClass> allParents) {
+    for (PsiClass aClass : clazz.getSupers()) {
+      if (!allParents.contains(aClass)) {
+        allParents.add(aClass);
+        getAllParents(aClass, allParents);
+      }
+    }
+    return allParents;
   }
 }

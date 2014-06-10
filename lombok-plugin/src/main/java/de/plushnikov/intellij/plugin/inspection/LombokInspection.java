@@ -2,15 +2,25 @@ package de.plushnikov.intellij.plugin.inspection;
 
 import com.intellij.codeInsight.daemon.GroupNames;
 import com.intellij.codeInspection.BaseJavaLocalInspectionTool;
+import com.intellij.codeInspection.ProblemHighlightType;
 import com.intellij.codeInspection.ProblemsHolder;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.JavaElementVisitor;
 import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementVisitor;
+import com.intellij.psi.PsiMethod;
+import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.util.PsiTreeUtil;
 import de.plushnikov.intellij.plugin.extension.LombokProcessorExtensionPoint;
+import de.plushnikov.intellij.plugin.handler.FieldDefaultsHandler;
 import de.plushnikov.intellij.plugin.problem.LombokProblem;
 import de.plushnikov.intellij.plugin.processor.Processor;
+import de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor;
+import de.plushnikov.intellij.plugin.psi.LombokLightMethodBuilder;
 import gnu.trove.THashMap;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -19,6 +29,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
+
+import static de.plushnikov.intellij.plugin.extension.LombokCompletionContributor.LombokElementFilter.getCallType;
+import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor.isInExtensionScope;
+import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodProcessor.getExtendingMethods;
 
 /**
  * @author Plushnikov Michail
@@ -69,9 +83,73 @@ public class LombokInspection extends BaseJavaLocalInspectionTool {
   @Override
   public PsiElementVisitor buildVisitor(@NotNull final ProblemsHolder holder, final boolean isOnTheFly) {
     return new JavaElementVisitor() {
+
+      @Override
+      public void visitMethodCallExpression(PsiMethodCallExpression expression) {
+        super.visitMethodCallExpression(expression);
+        PsiClass currentClass = PsiTreeUtil.getParentOfType(expression, PsiClass.class);
+        if (currentClass == null) return;
+
+        PsiType callType = getCallType(expression, currentClass);
+
+        PsiElement resolve = expression.getMethodExpression().resolve();
+        if (resolve == null || callType == null || !(resolve instanceof PsiMethod)) {
+          return;
+        }
+
+        PsiMethod psiMethod = (PsiMethod) resolve;
+
+      // check lombok.val
+//        if (AbstractValProcessor.isVal(callType)) {
+//          if (!filterVal(psiMethod, expression.getMethodExpression(), currentClass)) {
+//            holder.registerProblem(expression.getMethodExpression(), String.format("Cannot resolve method '%s()'...", psiMethod.getName()), ProblemHighlightType.ERROR);
+//          }
+//        }
+        PsiClass methodContainingClass = psiMethod.getContainingClass();
+        if (methodContainingClass == null || currentClass.getQualifiedName() == null) return;
+        if (!(psiMethod instanceof LombokLightMethodBuilder) || methodContainingClass.getQualifiedName() == null || methodContainingClass.getQualifiedName().endsWith(currentClass.getQualifiedName())) {
+          return;
+        }
+
+      // find this method
+        boolean foundProblem = false;
+        String methodName = psiMethod.getName();
+        for (PsiMethod method : getExtendingMethods(currentClass)) {
+          if (!method.getName().equals(methodName)) {
+            continue;
+          }
+
+          PsiType type = ExtensionMethodBuilderProcessor.getType(method.getParameterList().getParameters()[0].getType(), method);
+          if (type.isAssignableFrom(callType)) {
+            if (!isInExtensionScope(currentClass)) {
+              foundProblem = true;
+              break;                    // (this method can't resolve in this scope)
+            }
+            return;                     // exit (found method in this scope)
+          } else {
+            foundProblem = true;        // can't find method with that parameters, try another
+          }
+        }
+        if (foundProblem) {
+          holder.registerProblem(expression.getMethodExpression(), String.format("Cannot resolve method '%s()'...", psiMethod.getName()), ProblemHighlightType.ERROR);
+        }
+      }
+
       @Override
       public void visitReferenceExpression(PsiReferenceExpression expression) {
         // do nothing, just implement
+      }
+
+      @Override
+      public void visitMethod(PsiMethod method) {
+        super.visitMethod(method);
+        FieldDefaultsHandler.handleMethod(method, holder);
+      }
+
+      @Override
+      public void visitClass(PsiClass aClass) {
+        super.visitClass(aClass);
+        FieldDefaultsHandler.handleClass(aClass, holder);
       }
 
       @Override

@@ -19,8 +19,10 @@ import com.intellij.psi.augment.PsiAugmentProvider;
 import de.plushnikov.intellij.plugin.extension.LombokProcessorExtensionPoint;
 import de.plushnikov.intellij.plugin.extension.UserMapKeys;
 import de.plushnikov.intellij.plugin.processor.Processor;
+import de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor;
 import de.plushnikov.intellij.plugin.settings.ProjectSettings;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
+import lombok.val;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -143,6 +145,9 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
   }
 
   private boolean verifyLombokPresent(@NotNull PsiClass psiClass) {
+    if (ExtensionMethodBuilderProcessor.isExtensible(psiClass)) {
+      return true;
+    }
     if (checkAnnotations(psiClass)) {
       return true;
     }

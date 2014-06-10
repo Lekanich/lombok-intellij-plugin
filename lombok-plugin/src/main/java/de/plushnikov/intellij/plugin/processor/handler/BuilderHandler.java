@@ -24,6 +24,7 @@ import de.plushnikov.intellij.plugin.thirdparty.ErrorMessages;
 import de.plushnikov.intellij.plugin.thirdparty.LombokUtils;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
+import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import lombok.experimental.Builder;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -231,7 +232,7 @@ public class BuilderHandler {
         //Skip fields that start with $
         createField &= !psiField.getName().startsWith(LombokUtils.LOMBOK_INTERN_FIELD_MARKER);
         // skip initialized final fields
-        createField &= !(null != psiField.getInitializer() && modifierList.hasModifierProperty(PsiModifier.FINAL));
+        createField &= !(null != psiField.getInitializer() && PsiFieldUtil.isFinal(psiField));
       }
       if (createField) {
         fields.add(new LombokLightFieldBuilder(psiManager, psiField.getName(), psiField.getType())
@@ -267,7 +268,7 @@ public class BuilderHandler {
         //Skip fields that start with $
         createMethod &= !psiField.getName().startsWith(LombokUtils.LOMBOK_INTERN_FIELD_MARKER);
         // skip initialized final fields
-        createMethod &= !(null != psiField.getInitializer() && modifierList.hasModifierProperty(PsiModifier.FINAL));
+        createMethod &= !(null != psiField.getInitializer() && PsiFieldUtil.isFinal(psiField));
       }
       if (createMethod) {
         methods.add(new LombokLightMethodBuilder(psiField.getManager(), createSetterName(psiAnnotation, psiField.getName()))
