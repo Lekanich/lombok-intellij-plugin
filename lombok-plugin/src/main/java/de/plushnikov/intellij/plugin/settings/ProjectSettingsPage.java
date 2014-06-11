@@ -34,6 +34,7 @@ public class ProjectSettingsPage implements SearchableConfigurable, Configurable
   public ProjectSettingsPage(Project project) {
     myProject = project;
 
+    if (checkButton != null)          // spike fix
     checkButton.addActionListener(new ActionListener() {
       @Override
       public void actionPerformed(ActionEvent e) {
