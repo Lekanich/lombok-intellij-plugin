@@ -2,5 +2,5 @@
 <plugins>
 	<!-- Also change version in META-INF/plugin.xml, pom.xml-->
 	<plugin id="lombok-plugin" url="http://releases.huyaru.com/tools/lombok-plugin.jar"/>
-	<plugin id="idea-plugin" url="http://releases.huyaru.com/tools/idea-plugin.jar" version="1.0.61"/>
+	<plugin id="idea-plugin" url="http://releases.huyaru.com/tools/idea-plugin.jar" version="1.0.62"/>
 </plugins>
