@@ -61,8 +61,10 @@ public class ProjectSettingsPage implements SearchableConfigurable, Configurable
 
   @Override
   public JComponent createComponent() {
-    myEnableLombokInProject.setSelected(ProjectSettings.isEnabledInProject(myProject));
-    updateAnnotationConfigurationInfo();
+    if (myEnableLombokInProject != null) {
+      myEnableLombokInProject.setSelected(ProjectSettings.isEnabledInProject(myProject));
+      updateAnnotationConfigurationInfo();
+    }
 
     return myPanel;
   }

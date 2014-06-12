@@ -3,7 +3,7 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.0.15</version>
+  <version>1.0.16</version>
 
   <idea-version since-build="133.00"/>
 
@@ -31,7 +31,7 @@
     <lang.psiAugmentProvider implementation="de.plushnikov.intellij.plugin.provider.LombokAugmentProvider"/>
     <implicitUsageProvider implementation="de.plushnikov.intellij.plugin.provider.LombokImplicitUsageProvider"/>
     <inspectionToolProvider implementation="de.plushnikov.intellij.plugin.provider.LombokInspectionProvider"/>
-    <projectConfigurable implementation="de.plushnikov.intellij.plugin.settings.ProjectSettingsPage"/>
+    <!--<projectConfigurable implementation="de.plushnikov.intellij.plugin.settings.ProjectSettingsPage"/>-->
 
     <renameHandler implementation="de.plushnikov.intellij.plugin.extension.LombokElementRenameHandler" order="FIRST"/>
     <treeGenerator implementation="de.plushnikov.intellij.plugin.extension.LombokLightMethodTreeGenerator"/>
@@ -180,6 +180,9 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.0.14
+		    <li>Temporary remove Lombok SettingPage</li>
+			</li>
 		<li>1.0.14
 				<ol>
 				    <li>Fixed incorrect name</li>
