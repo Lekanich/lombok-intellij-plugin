@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugins>
 	<!-- Also change version in META-INF/plugin.xml, pom.xml-->
-	<plugin id="lombok-plugin" url="http://releases.huyaru.com/tools/lombok-plugin.jar" version="1.0.16"/>
-	<plugin id="idea-plugin" url="http://releases.huyaru.com/tools/idea-plugin.jar" version="1.0.64"/>
+	<plugin id="lombok-plugin" url="http://releases.huyaru.com/tools/lombok-plugin.jar" version="1.0.17"/>
+	<plugin id="idea-plugin" url="http://releases.huyaru.com/tools/idea-plugin.jar" version="1.0.65"/>
 </plugins>
