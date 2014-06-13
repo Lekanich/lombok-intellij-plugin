@@ -96,6 +96,13 @@
         <scope>system</scope>
         <systemPath>${libs.path}/idea.jar</systemPath>
       </dependency>
+      <dependency>
+        <groupId>com.intellij</groupId>
+        <artifactId>forms_rt</artifactId>
+        <version>${intellij.sdk.name}</version>
+        <scope>system</scope>
+        <systemPath>${libs.path}/forms_rt.jar</systemPath>
+      </dependency>
     </dependencies>
 
   <build>
