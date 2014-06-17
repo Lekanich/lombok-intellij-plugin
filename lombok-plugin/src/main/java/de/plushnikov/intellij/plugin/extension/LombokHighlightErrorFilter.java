@@ -94,9 +94,10 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
     if (psiElement == null || !(psiElement instanceof PsiField)) return true;
 
     PsiField field = (PsiField) psiElement;
+    PsiClass classContainingField = field.getContainingClass();
     if (field.getModifierList().hasModifierProperty(PsiModifier.PRIVATE) || field.getModifierList().hasModifierProperty(PsiModifier.PROTECTED)) return true;    // obviously marked
 
-    PsiAnnotation annotation = findAnnotation(field.getContainingClass(), FieldDefaults.class.getCanonicalName());
+    PsiAnnotation annotation = findAnnotation(classContainingField, FieldDefaults.class.getCanonicalName());
     if (annotation == null) return true;                                                                                                                        // can't find annotation
 
     PsiAnnotationMemberValue attrValue = annotation.findAttributeValue("level");
@@ -114,7 +115,9 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
 
     if (accessLevel == AccessLevel.NONE || accessLevel == AccessLevel.PRIVATE) return true;
     if (accessLevel == AccessLevel.PUBLIC) return false;
-    if (accessLevel == AccessLevel.PROTECTED && PsiClassUtil.hasParent(containingClass, field.getContainingClass())) return false;
+    PsiMethod methodParentOfType = PsiTreeUtil.getParentOfType(element, PsiMethod.class);
+    if (classContainingField == null) return true;
+    if (accessLevel == AccessLevel.PROTECTED && PsiClassUtil.hasParent(containingClass, classContainingField)) return methodParentOfType != null && methodParentOfType.hasModifierProperty(PsiModifier.STATIC);
 
     if (field.getContainingFile().getName().equals(file.getName())) return false;
     return true;

@@ -141,12 +141,6 @@ public class LombokInspection extends BaseJavaLocalInspectionTool {
       }
 
       @Override
-      public void visitMethod(PsiMethod method) {
-        super.visitMethod(method);
-        FieldDefaultsHandler.handleMethod(method, holder);
-      }
-
-      @Override
       public void visitClass(PsiClass aClass) {
         super.visitClass(aClass);
         FieldDefaultsHandler.handleClass(aClass, holder);
