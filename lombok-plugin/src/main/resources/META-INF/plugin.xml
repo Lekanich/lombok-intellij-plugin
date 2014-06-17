@@ -181,72 +181,53 @@
   <change-notes><![CDATA[
 		<ul>
 		<li>1.0.18
-		    <li>Fixed field check (in code block and constructor)</li>
+		    <br>Fixed field check (in code block and constructor)</br>
+		    <br>Fixed CastExceptionBug</br>
 			</li>
 		<li>1.0.17
-		    <li>Comeback Lombok SettingPage</li>
+		    <br>Comeback Lombok SettingPage</br>
 			</li>
 		<li>1.0.16
-		    <li>Temporary remove Lombok SettingPage</li>
+		    <br>Temporary remove Lombok SettingPage</br>
 			</li>
 		<li>1.0.14
-				<ol>
-				    <li>Fixed incorrect name</li>
-				</ol>
+				<br>Fixed incorrect name</br>
 			</li>
 		<li>1.0.13
-				<ol>
-				    <li>Fixed ProjectSettingPage<init>  nullPointer</li>
-				</ol>
+				<br>Fixed ProjectSettingPage<init>  nullPointer</br>
 			</li>
 		<li>1.0.12
-				<ol>
-				    <li>Fixed ExtensionMethods. It works with methods with multi parameters.</li>
-				    <li>Fixed Contributor order. Bug=@version</li>
-				</ol>
+				<br>Fixed ExtensionMethods. It works with methods with multi parameters.</br>
+				<br>Fixed Contributor order. Bug=@version</br>
 			</li>
 		<li>1.0.11
-				<ol>
-				    <li>Fixed FieldDefaults. Cast exception PsiNameValuePair to PsiReference</li>
-				</ol>
+				<br>Fixed FieldDefaults. Cast exception PsiNameValuePair to PsiReference</br>
 			</li>
 		<li>1.0.10
-				<ol>
-				    <li>Fixed FieldDefaults. Access fields</li>
-				    <li>val support off</li>
-				    <!--<li>Known bug. Sometimes generated methods are converted to non-existent. The cause is not yet known.</li>-->
-				    <!--<li>Added val support. Experimental. Known bug. If a val initialized class has the same methods, navigation will be implemented in the first that fell. </li>-->
-				</ol>
+				<br>Fixed FieldDefaults. Access fields</br>
+				<br>val support off</br>
+				<!--<br>Known bug. Sometimes generated methods are converted to non-existent. The cause is not yet known.</br>-->
+				<!--<br>Added val support. Experimental. Known bug. If a val initialized class has the same methods, navigation will be implemented in the first that fell. </br>-->
 			</li>
 		<li>1.0.9
-				<ol>
-				    <li>Fixed LombokInspection (Bug marked all generated methods)</li>
-				</ol>
+				<br>Fixed LombokInspection (Bug marked all generated methods)</br>
 			</li>
 		<li>1.0.7
-				<ol>
-				    <li>Fixed generic array types </li>
-				    <li>Added simple support primitive types </li>
-				    <li>Known bug. @ExtensionMethods. Not supported complex generics like <T extends Comparable<? super Comparable>> (fixed erase generic)</li>
-				</ol>
+				<br>Fixed generic array types </br>
+				<br>Added simple support primitive types </br>
+				<br>Known bug. @ExtensionMethods. Not supported complex generics like <T extends Comparable<? super Comparable>> (fixed erase generic)</br>
 			</li>
 		<li>1.0.6
-				<ol>
-				    <li>Fixed JavaCompletionContributor </li>
-				</ol>
+				<br>Fixed JavaCompletionContributor </br>
 			</li>
 		<li>1.0.5
-				<ol>
-				    <li>Added support final in FieldDefaults </li>
-				    <li>Added partly support ExtensionMethods </li>
-				    <li>Known bug. @ExtensionMethods. With multiple methods with the same name, navigation will be implemented in the first that fell. </li>
-				</ol>
+				<br>Added support final in FieldDefaults </br>
+				<br>Added partly support ExtensionMethods </br>
+				<br>Known bug. @ExtensionMethods. With multiple methods with the same name, navigation will be implemented in the first that fell. </br>
 			</li>
 		<li>1.0.3
-				<ol>
-				    <li>Added support FieldDefaults </li>
-				    <li>Fixed FieldDefaults with keyword</li>
-				</ol>
+				<br>Added support FieldDefaults </br>
+				<br>Fixed FieldDefaults with keyword</br>
 			</li>
 		<li>0.8.7
 				<ol>

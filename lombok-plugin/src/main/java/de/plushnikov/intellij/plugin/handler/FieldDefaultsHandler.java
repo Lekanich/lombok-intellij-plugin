@@ -334,7 +334,7 @@ public class FieldDefaultsHandler {
         PsiExpression lExpression = ((PsiAssignmentExpression) child).getLExpression();
         if (lExpression instanceof PsiReferenceExpression) {
           PsiElement element = ((PsiReferenceExpression) lExpression).resolve();
-          if (element != null) innerInitFields.add(new FieldRef((PsiField) element, (PsiReference) lExpression));
+          if (element instanceof PsiField) innerInitFields.add(new FieldRef((PsiField) element, (PsiReference) lExpression));
         }
       } else {
         getFields(child, innerInitFields);
