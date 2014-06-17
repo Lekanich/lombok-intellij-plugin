@@ -25,8 +25,6 @@ import de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProce
 import de.plushnikov.intellij.plugin.settings.DefaultSettings;
 import de.plushnikov.intellij.plugin.settings.ProjectSettings;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
-import lombok.val;
-import org.jdesktop.swingx.action.ActionManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.ProcessorConfigProfile;
 import org.jetbrains.jps.model.java.impl.compiler.ProcessorConfigProfileImpl;
