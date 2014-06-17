@@ -1,5 +1,7 @@
 package de.plushnikov.intellij.plugin.provider;
 
+import com.intellij.compiler.CompilerConfiguration;
+import com.intellij.compiler.CompilerConfigurationImpl;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
@@ -20,10 +22,14 @@ import de.plushnikov.intellij.plugin.extension.LombokProcessorExtensionPoint;
 import de.plushnikov.intellij.plugin.extension.UserMapKeys;
 import de.plushnikov.intellij.plugin.processor.Processor;
 import de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor;
+import de.plushnikov.intellij.plugin.settings.DefaultSettings;
 import de.plushnikov.intellij.plugin.settings.ProjectSettings;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
 import lombok.val;
+import org.jdesktop.swingx.action.ActionManager;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.model.java.compiler.ProcessorConfigProfile;
+import org.jetbrains.jps.model.java.impl.compiler.ProcessorConfigProfileImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -81,6 +87,8 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
     if (!ProjectSettings.loadAndGetEnabledInProject(project)) {
       return emptyResult;
     }
+
+    readAnnotationConfiguration(project);
 
     recursionBreaker.get().add(currentAugmentData);
     try {
@@ -178,5 +186,22 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
       }
     }
     return false;
+  }
+
+  private void readAnnotationConfiguration(Project project) {
+		ProcessorConfigProfile defaultProfile = new ProcessorConfigProfileImpl("");
+		List<ProcessorConfigProfile> moduleProfiles = new ArrayList<>();
+		final CompilerConfigurationImpl config = (CompilerConfigurationImpl) CompilerConfiguration.getInstance(project);
+
+	// copy profiles
+		defaultProfile.initFrom(config.getDefaultProcessorProfile());
+		for (ProcessorConfigProfile profile : config.getModuleProcessorProfiles()) {
+			ProcessorConfigProfile copy = new ProcessorConfigProfileImpl("");
+			copy.initFrom(profile);
+			moduleProfiles.add(copy);
+		}
+
+    String getterNoIsPrefix = defaultProfile.getOption(DefaultSettings.GETTER_NO_IS_PREFIX);
+    ProjectSettings.lombokGetterNoIsPrefix = getterNoIsPrefix != null;
   }
 }

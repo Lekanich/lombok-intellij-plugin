@@ -96,7 +96,7 @@ public class FieldDefaultsHandler {
     }
 
     for (final PsiField field : errorFields) {
-      holder.registerProblem(field, String.format(MESSAGE1, field.getName()), ProblemHighlightType.GENERIC_ERROR,
+      if (isFinal(field) && !field.hasModifierProperty(PsiModifier.FINAL)) holder.registerProblem(field, String.format(MESSAGE1, field.getName()), ProblemHighlightType.GENERIC_ERROR,
           new BaseLocalFix(MESSAGE1_FIX) {
         @Override
         public void applyFix(@NotNull final Project project, @NotNull ProblemDescriptor descriptor) {
@@ -207,7 +207,7 @@ public class FieldDefaultsHandler {
       for (int i = 0; i < constructors.size(); i++) {
         Set<PsiField> initedFields = new HashSet<PsiField>();
 
-        PsiMethod parentConstructor = getThisCall(constructors.get(i));
+        PsiMethod parentConstructor = getThisCall(constructors.get(i), constructors.get(i).getName());
         if (parentConstructor != null) {
           if (initInConstructors.containsKey(parentConstructor)) {
             initedFields.addAll(initInConstructors.get(parentConstructor));
@@ -217,7 +217,7 @@ public class FieldDefaultsHandler {
         }
 
         for (FieldRef fieldRef : getFields(constructors.get(i))) {
-          if (isFinal(fieldRef.getPsiField())) {
+          if (isFinal(fieldRef.getPsiField()) && !fieldRef.getPsiField().hasModifierProperty(PsiModifier.FINAL)) {
             PsiClass fieldContainingClass = fieldRef.getPsiField().getContainingClass();
             if (fieldContainingClass != null && !fieldContainingClass.hasModifierProperty(PsiModifier.ABSTRACT) && psiClass.getQualifiedName() != null
                 && !psiClass.getQualifiedName().equals(fieldContainingClass.getQualifiedName())) {
@@ -267,7 +267,7 @@ public class FieldDefaultsHandler {
   // find error references in methods;
     for (PsiMethod method : methods) {
       for (FieldRef fieldRef : getFields(method)) {
-        if (isFinal(fieldRef.getPsiField())) {
+        if (isFinal(fieldRef.getPsiField()) && !fieldRef.getPsiField().hasModifierProperty(PsiModifier.FINAL)) {
           PsiClass fieldContainingClass = fieldRef.getPsiField().getContainingClass();
           if (fieldContainingClass != null && !fieldContainingClass.hasModifierProperty(PsiModifier.ABSTRACT) && psiClass.getQualifiedName() != null
               && !psiClass.getQualifiedName().equals(fieldContainingClass.getQualifiedName())) {
@@ -304,18 +304,18 @@ public class FieldDefaultsHandler {
   }
 
   @Nullable
-  private static PsiMethod getThisCall(@NotNull PsiElement parent) {
+  private static PsiMethod getThisCall(@NotNull PsiElement parent, @NotNull String name) {
     PsiMethodCallExpression methodCallExpression = PsiTreeUtil.getChildOfType(parent, PsiMethodCallExpression.class);
 
   // if find this() call return constructor
     if (methodCallExpression != null ) {
       PsiMethod method = methodCallExpression.resolveMethod();
-      if (method != null && method.isConstructor()) return method;
+      if (method != null && method.isConstructor() && name.equals(method.getName())) return method;
     }
 
   // find in children
     for (PsiElement child : parent.getChildren()) {
-      PsiMethod method = getThisCall(child);
+      PsiMethod method = getThisCall(child, name);
       if (method != null) return method;
     }
 

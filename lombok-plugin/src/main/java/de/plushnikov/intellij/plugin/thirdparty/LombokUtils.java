@@ -1,5 +1,8 @@
 package de.plushnikov.intellij.plugin.thirdparty;
 
+import de.plushnikov.intellij.plugin.settings.DefaultSettings;
+import de.plushnikov.intellij.plugin.settings.ProjectSettings;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -44,6 +47,7 @@ Various problems with spring have also been reported. See issue #287, issue #271
    * @param isBoolean if the field is of type 'boolean'. For fields of type 'java.lang.Boolean', you should provide {@code false}.
    */
   public static String toGetterName(CharSequence fieldName, boolean isBoolean) {
+    isBoolean = !ProjectSettings.lombokGetterNoIsPrefix && isBoolean;
     final String prefix = isBoolean ? "is" : "get";
 
     if (fieldName.length() == 0) return prefix;
@@ -72,6 +76,7 @@ Various problems with spring have also been reported. See issue #287, issue #271
    * @param isBoolean if the field is of type 'boolean'. For fields of type 'java.lang.Boolean', you should provide {@code false}.
    */
   public static String toSetterName(CharSequence fieldName, boolean isBoolean) {
+    isBoolean = !ProjectSettings.lombokGetterNoIsPrefix && isBoolean;
     if (fieldName.length() == 0) return "set";
 
     if (isBoolean && fieldName.toString().startsWith("is") && fieldName.length() > 2 && !Character.isLowerCase(fieldName.charAt(2))) {
@@ -106,6 +111,7 @@ Various problems with spring have also been reported. See issue #287, issue #271
    * @param isBoolean if the field is of type 'boolean'. For fields of type 'java.lang.Boolean', you should provide {@code false}.
    */
   public static List<String> toAllGetterNames(CharSequence fieldName, boolean isBoolean) {
+    isBoolean = !ProjectSettings.lombokGetterNoIsPrefix && isBoolean;
     if (!isBoolean) return Collections.singletonList(toGetterName(fieldName, false));
 
     List<String> baseNames = new ArrayList<String>();
@@ -139,6 +145,7 @@ Various problems with spring have also been reported. See issue #287, issue #271
    * @param isBoolean if the field is of type 'boolean'. For fields of type 'java.lang.Boolean', you should provide {@code false}.
    */
   public static List<String> toAllSetterNames(CharSequence fieldName, boolean isBoolean) {
+    isBoolean = !ProjectSettings.lombokGetterNoIsPrefix && isBoolean;
     if (!isBoolean) return Collections.singletonList(toSetterName(fieldName, false));
 
     List<String> baseNames = new ArrayList<String>();
