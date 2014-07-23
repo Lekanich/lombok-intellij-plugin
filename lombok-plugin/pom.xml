@@ -129,7 +129,11 @@
               <resources>
                 <resource>
                   <directory>${basedir}/resource</directory>
-                  <include>updatePlugins.xml</include>
+                  <include>lombokUpdate.xml</include>
+                </resource>
+                <resource>
+                  <directory>${basedir}/resource</directory>
+                  <include>makeUpdateXml.sh</include>
                 </resource>
               </resources>
             </configuration>
