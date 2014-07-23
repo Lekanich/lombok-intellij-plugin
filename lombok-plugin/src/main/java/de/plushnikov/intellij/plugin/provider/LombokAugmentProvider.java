@@ -86,7 +86,7 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
       return emptyResult;
     }
 
-    readAnnotationConfiguration(project);
+//    readAnnotationConfiguration(project);
 
     recursionBreaker.get().add(currentAugmentData);
     try {

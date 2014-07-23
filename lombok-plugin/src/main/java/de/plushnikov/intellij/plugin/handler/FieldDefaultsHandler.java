@@ -308,7 +308,7 @@ public class FieldDefaultsHandler {
     PsiMethodCallExpression methodCallExpression = PsiTreeUtil.getChildOfType(parent, PsiMethodCallExpression.class);
 
   // if find this() call return constructor
-    if (methodCallExpression != null ) {
+    if (methodCallExpression != null && methodCallExpression.getText().startsWith("this")) {
       PsiMethod method = methodCallExpression.resolveMethod();
       if (method != null && method.isConstructor() && name.equals(method.getName())) return method;
     }

@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<plugins>
-	<!-- Also change version in META-INF/plugin.xml, pom.xml-->
-  <plugin name="Lombok Plugin(HC)" id="lombok-plugin" url="http://releases.huyaru.com/tools/lombok-plugin.jar" version="1.0.18"/>
-  <plugin name="Hamster Plugin" id="idea-plugin" url="http://releases.huyaru.com/tools/idea-plugin.jar" version="1.0.66"/>
-</plugins>
