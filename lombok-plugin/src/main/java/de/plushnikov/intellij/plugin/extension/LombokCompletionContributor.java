@@ -74,6 +74,7 @@ import com.intellij.psi.PsiJavaReference;
 import com.intellij.psi.PsiJavaToken;
 import com.intellij.psi.PsiKeyword;
 import com.intellij.psi.PsiLiteralExpression;
+import com.intellij.psi.PsiLocalVariable;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiNameValuePair;
@@ -109,6 +110,8 @@ import com.intellij.util.PairConsumer;
 import com.intellij.util.ProcessingContext;
 import com.siyeh.ig.psiutils.ClassUtils;
 import de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor;
+import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
+import lombok.experimental.FieldDefaults;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -463,56 +466,18 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     public boolean isAcceptable(Object element, @Nullable PsiElement context) {
 //      if (!filterVal((PsiElement)element, context)) return false;
       if (element instanceof PsiMethod) return filterExtensionMethods((PsiMethod) element, context);
+      if (element instanceof PsiField) return filterFieldDefault((PsiField) element, context);
       return true;
     }
 
-//    public static boolean filterVal(@NotNull PsiElement currentElement, @NotNull PsiExpression expression, @NotNull PsiClass containingClass) {
-//      if (!(currentElement instanceof PsiField) && !(currentElement instanceof PsiMethod)) return true;
-//
-//      PsiElement element = getCallElement(expression, containingClass);
-//      if (element == null) return true;
-//      element = ((PsiReferenceExpressionImpl) element).resolve();
-//      if (!(element instanceof PsiLocalVariable)) return true;          // todo if val isn't local variable it's error
-//      PsiExpression initializer = ((PsiLocalVariable) element).getInitializer();
-//      if (initializer == null) return true;
-//
-//      if (currentElement instanceof PsiMethod) {
-//        PsiMethod method = (PsiMethod) currentElement;
-//      // remove if inherit from java.lang.Annotation
-//        if (method.getName().equals(AbstractValProcessor.ANNOTATION_METHOD)) return false;
-//
-//      // get imaginary val methods
-//        for (PsiMethod psiMethod : PsiTypesUtil.getPsiClass(initializer.getType()).getAllMethods()) {
-//          if (method.getName().equals(psiMethod.getName())) return true;
-//        }
-//
-//      // get Object methods
-//        for (PsiMethod psiMethod : PsiClassUtil.collectClassMethodsIntern(findClass(currentElement, Object.class.getCanonicalName()))) {
-//          if (method.getName().equals(psiMethod.getName())) return true;
-//        }
-//      } else if (currentElement instanceof  PsiField) {
-//      // get imaginary val field
-//        for (PsiField psiField : PsiTypesUtil.getPsiClass(initializer.getType()).getAllFields()) {
-//          if (((PsiField) currentElement).getName().equals(psiField.getName())) return true;
-//        }
-//      }
-//
-//      return false;             // all another skip (filter)
-//    }
-//
-//    private boolean filterVal(@NotNull PsiElement currentElement, @Nullable PsiElement context) {
-//      if (!(currentElement instanceof PsiField) && !(currentElement instanceof PsiMethod)) return true;
-//      if (context == null) return true;
-//      PsiClass containingClass = ClassUtils.getContainingClass(context);
-//      if (containingClass == null) return true;
-//
-//      PsiReferenceExpression expression = PsiTreeUtil.getParentOfType(context.getContainingFile().findElementAt(context.getTextOffset()), PsiReferenceExpression.class);
-//      if(expression == null) return true;
-//      PsiType type = getCallType(expression, containingClass);
-//      if (type == null || !AbstractValProcessor.isVal(type)) return true;
-//
-//      return filterVal(currentElement, expression, containingClass);
-//    }
+    /**
+     * also manual handle access modifiers
+     */
+    private boolean filterFieldDefault(@NotNull PsiField field, @Nullable PsiElement context) {
+      if(context == null) return true;
+
+      return !LombokHighlightErrorFilter.isInaccessible(field, PsiTreeUtil.getParentOfType(context, PsiClass.class), context.getParent());
+    }
 
     private boolean filterExtensionMethods(@NotNull PsiMethod method, @Nullable PsiElement context) {
       if(context == null) return true;
@@ -521,7 +486,9 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
 
       PsiReferenceExpression expression = PsiTreeUtil.getParentOfType(context.getContainingFile().findElementAt(context.getTextOffset()), PsiReferenceExpression.class);
       if(expression == null) return true;
+
       PsiType type = getCallType(expression, containingClass);
+      if (type == null) return true;
 
       boolean result = true;
       for (PsiMethod psiMethod : getExtendingMethods(containingClass)) {
@@ -539,7 +506,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
 
     @Override
     public String toString() {
-      return "true";
+      return "true(hc)";
     }
 
     @Override
@@ -731,6 +698,18 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     }
   }
 
+  private static boolean hasFieldDefaults(PsiReferenceExpression reference) {
+    if (reference == null) return false;
+    PsiElement callElement = reference.resolve();
+
+    PsiClass annotatedClass = null;
+    if (callElement instanceof PsiLocalVariable) annotatedClass = PsiTypesUtil.getPsiClass(((PsiLocalVariable) callElement).getType());
+    if (callElement instanceof PsiField) annotatedClass = ((PsiField) callElement).getContainingClass();
+    if (callElement instanceof PsiClass) annotatedClass = (PsiClass) callElement;
+
+    return annotatedClass != null && PsiAnnotationUtil.findAnnotation(annotatedClass, FieldDefaults.class) != null;
+  }
+
   private static Set<String> addReferenceVariants(final CompletionParameters parameters, CompletionResultSet result, final InheritorsHolder inheritors) {
     final Set<String> usedWords = new HashSet<String>();
     final PsiElement position = parameters.getPosition();
@@ -742,12 +721,19 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
       @Override
       public void consume(final PsiReference reference, final CompletionResultSet result) {
         if (reference instanceof PsiJavaReference) {
+        // check access
+          boolean checkAccess = first;
+          if (reference instanceof PsiReferenceExpression) {
+            PsiElement qualifier = ((PsiReferenceExpression) reference).getQualifier();
+            if (qualifier instanceof PsiReferenceExpression) checkAccess = !hasFieldDefaults((PsiReferenceExpression) qualifier);   // if found annotation try see all elements
+          }
+
           final ElementFilter filter = getReferenceFilter(position);
           if (filter != null) {
             final PsiFile originalFile = parameters.getOriginalFile();
             JavaCompletionProcessor.Options options =
                 JavaCompletionProcessor.Options.DEFAULT_OPTIONS
-                    .withCheckAccess(first)
+                    .withCheckAccess(checkAccess)
                     .withFilterStaticAfterInstance(first)
                     .withShowInstanceInStaticContext(!first);
             for (LookupElement element : JavaCompletionUtil.processJavaReference(position,

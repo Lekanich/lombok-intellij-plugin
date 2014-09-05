@@ -3,7 +3,7 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.0.19</version>
+  <version>1.0.20</version>
 
   <idea-version since-build="133.00"/>
 
@@ -180,6 +180,9 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.0.20
+		    <br>Fixed autocomplete for field defaults (quicker)
+			</li>
 		<li>1.0.19
 		    <br>Fixed field check (in code block and constructor)</br>
 		    <br>Fixed CastExceptionBug</br>
