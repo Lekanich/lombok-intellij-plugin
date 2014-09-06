@@ -201,7 +201,10 @@ public class PsiClassUtil {
   }
 
   public static boolean hasParent(@NotNull PsiClass clazz, @NotNull PsiClass classParent) {
-    return getAllParents(clazz).contains(classParent);
+    for (PsiClass parent : getAllParents(clazz)) {
+      if (parent.getQualifiedName().equals(classParent.getQualifiedName())) return true;
+    }
+    return false;
   }
 
   @NotNull
