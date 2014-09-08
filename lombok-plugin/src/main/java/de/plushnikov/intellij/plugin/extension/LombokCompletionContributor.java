@@ -84,8 +84,10 @@ import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiReferenceParameterList;
 import com.intellij.psi.PsiResolveHelper;
 import com.intellij.psi.PsiSubstitutor;
+import com.intellij.psi.PsiSuperExpression;
 import com.intellij.psi.PsiSwitchLabelStatement;
 import com.intellij.psi.PsiSwitchStatement;
+import com.intellij.psi.PsiThisExpression;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeElement;
 import com.intellij.psi.PsiTypeParameter;
@@ -98,6 +100,7 @@ import com.intellij.psi.filters.TrueFilter;
 import com.intellij.psi.filters.element.ModifierFilter;
 import com.intellij.psi.filters.getters.JavaMembersGetter;
 import com.intellij.psi.impl.source.PsiLabelReference;
+import com.intellij.psi.impl.source.resolve.JavaResolveUtil;
 import com.intellij.psi.scope.ElementClassFilter;
 import com.intellij.psi.util.InheritanceUtil;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -133,8 +136,11 @@ import static com.intellij.patterns.PsiJavaPatterns.psiNameValuePair;
 import static com.intellij.patterns.PsiJavaPatterns.psiReferenceExpression;
 import static com.intellij.patterns.StandardPatterns.not;
 import static com.intellij.patterns.StandardPatterns.or;
+import static com.intellij.psi.util.PsiTypesUtil.getPsiClass;
 import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor.getType;
 import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodProcessor.getExtendingMethods;
+import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.isAnnotatedWith;
+import static de.plushnikov.intellij.plugin.util.PsiClassUtil.getAllParents;
 
 /**
  * @author Suburban Squirrel
@@ -476,12 +482,41 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     private boolean filterFieldDefault(@NotNull PsiField field, @Nullable PsiElement context) {
       if(context == null) return true;
 
-      PsiClass contextClass = PsiTreeUtil.getParentOfType(context, PsiClass.class);
-      if (field.hasModifierProperty(PsiModifier.PUBLIC) || field.hasModifierProperty(PsiModifier.PRIVATE) || field.hasModifierProperty(PsiModifier.PROTECTED)) {
-        return JavaPsiFacade.getInstance(context.getProject()).getResolveHelper().isAccessible(field, context, field.getContainingClass());
+      PsiClass containClass = PsiTreeUtil.getParentOfType(context, PsiClass.class);
+
+    // find context
+      PsiClass contextClass = null;
+      PsiElement elementParent = context.getContext();
+      if (elementParent instanceof PsiReferenceExpression) {
+        PsiExpression qualifier = ((PsiReferenceExpression) elementParent).getQualifierExpression();
+        if (qualifier instanceof PsiSuperExpression) {
+          final PsiJavaCodeReferenceElement qSuper = ((PsiSuperExpression) qualifier).getQualifier();
+          if (qSuper == null) {
+            contextClass = JavaResolveUtil.getContextClass(context);
+          } else {
+            final PsiElement target = qSuper.resolve();
+            contextClass = target instanceof PsiClass ? (PsiClass) target : null;
+          }
+        } else if (qualifier != null) {
+          contextClass = PsiUtil.resolveClassInClassTypeOnly(qualifier.getType());
+          if (qualifier.getType() == null && qualifier instanceof PsiJavaCodeReferenceElement) {
+            final PsiElement target = ((PsiJavaCodeReferenceElement) qualifier).resolve();
+            if (target instanceof PsiClass) {
+              contextClass = (PsiClass) target;
+            }
+          }
+        } else {
+          contextClass = JavaResolveUtil.getContextClass(context);
+        }
       }
 
-      return !LombokHighlightErrorFilter.isInaccessible(field, contextClass, context.getParent());
+      boolean access = JavaResolveUtil.isAccessible(field, field.getContainingClass(), field.getModifierList(), context, contextClass, null);
+
+      if (containClass == null || field.getContainingClass() == null) return false;
+      if (!isAnnotatedWith(field.getContainingClass(), FieldDefaults.class) || field.hasModifierProperty(PsiModifier.PUBLIC)
+          || field.hasModifierProperty(PsiModifier.PRIVATE) || field.hasModifierProperty(PsiModifier.PROTECTED)) return access;
+
+      return !LombokHighlightErrorFilter.isInaccessible(field, containClass, context.getParent());
     }
 
     private boolean filterExtensionMethods(@NotNull PsiMethod method, @Nullable PsiElement context) {
@@ -708,7 +743,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     PsiElement callElement = reference.resolve();
 
     PsiClass annotatedClass = null;
-    if (callElement instanceof PsiLocalVariable) annotatedClass = PsiTypesUtil.getPsiClass(((PsiLocalVariable) callElement).getType());
+    if (callElement instanceof PsiLocalVariable) annotatedClass = getPsiClass(((PsiLocalVariable) callElement).getType());
     if (callElement instanceof PsiField) annotatedClass = ((PsiField) callElement).getContainingClass();
     if (callElement instanceof PsiClass) annotatedClass = (PsiClass) callElement;
 
@@ -730,7 +765,28 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
           boolean checkAccess = first;
           if (reference instanceof PsiReferenceExpression) {
             PsiElement qualifier = ((PsiReferenceExpression) reference).getQualifier();
-            if (qualifier instanceof PsiReferenceExpression) checkAccess = !hasFieldDefaults((PsiReferenceExpression) qualifier);   // if found annotation try see all elements
+            if (qualifier instanceof PsiReferenceExpression) {
+              checkAccess = !hasFieldDefaults((PsiReferenceExpression) qualifier);   // if found annotation try see all elements
+            }
+
+            PsiClass psiClass = null;
+            if (qualifier == null) {
+              psiClass = PsiTreeUtil.getParentOfType(((PsiReferenceExpression) reference).getReferenceNameElement(), PsiClass.class);
+            }
+            if (qualifier instanceof PsiThisExpression || qualifier instanceof PsiSuperExpression) {
+              psiClass = getPsiClass(((PsiThisExpression) qualifier).getType());
+            }
+
+            if (psiClass != null) {
+              checkAccess = !isAnnotatedWith(psiClass, FieldDefaults.class);
+              if (checkAccess == first) {
+                for (PsiClass parent : getAllParents(psiClass)) {
+                  checkAccess = !isAnnotatedWith(parent, FieldDefaults.class);
+                  if (checkAccess != first) break;
+                }
+              }
+
+            }
           }
 
           final ElementFilter filter = getReferenceFilter(position);
