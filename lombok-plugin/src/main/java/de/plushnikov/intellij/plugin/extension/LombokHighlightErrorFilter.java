@@ -23,7 +23,6 @@ import de.plushnikov.intellij.plugin.handler.SneakyTrowsExceptionHandler;
 import de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor;
 import de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodProcessor;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
-import de.plushnikov.intellij.plugin.util.PsiClassUtil;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.PackagePrivate;
@@ -31,9 +30,13 @@ import lombok.val;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.intellij.codeInsight.AnnotationUtil.findAnnotation;
 import static com.siyeh.ig.psiutils.ClassUtils.getContainingClass;
 import static de.plushnikov.intellij.plugin.extension.LombokCompletionContributor.LombokElementFilter.getCallType;
+import static de.plushnikov.intellij.plugin.util.PsiClassUtil.hasParent;
 
 public class LombokHighlightErrorFilter implements HighlightInfoFilter {
 
@@ -97,7 +100,7 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
   }
 
   public static boolean isInaccessible(@NotNull PsiField field, @NotNull PsiClass containingClass, @NotNull PsiElement place) {
-    if (field.getModifierList().hasModifierProperty(PsiModifier.PRIVATE) || field.getModifierList().hasModifierProperty(PsiModifier.PROTECTED)) return true;    // obviously marked
+    if (field.hasModifierProperty(PsiModifier.PRIVATE) || field.hasModifierProperty(PsiModifier.PROTECTED) || field.hasModifierProperty(PsiModifier.PUBLIC)) return true;    // obviously marked
 
     PsiClass classContainingField = field.getContainingClass();
     if (classContainingField == null) return true;
@@ -109,14 +112,22 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
   // check PackagePrivate annotation before accessLevel attribute
     PsiAnnotation packagePrivate = PsiAnnotationUtil.findAnnotation(field, PackagePrivate.class.getCanonicalName());
     if ((packagePrivate != null || accessLevel == AccessLevel.PACKAGE || accessLevel == AccessLevel.PROTECTED)
-        && ((PsiJavaFile) field.getContainingFile()).getPackageName().equals(((PsiJavaFile) containingClass.getContainingClass()).getPackageName())) {
+        && ((PsiJavaFile) field.getContainingFile()).getPackageName().equals(((PsiJavaFile) containingClass).getPackageName())) {
       return false;                                                                                                                                             // same package
     }
 
+    List<PsiClass> topClasses = new ArrayList<PsiClass>();
+    PsiClass topClass = containingClass;
+    do {
+      topClasses.add(topClass);
+      topClass = PsiTreeUtil.getParentOfType(topClass, PsiClass.class);
+    } while (topClass != null);
+
+    if (accessLevel == AccessLevel.PRIVATE && topClasses.contains(classContainingField)) return false;
     if (accessLevel == AccessLevel.NONE || accessLevel == AccessLevel.PRIVATE) return true;
     if (accessLevel == AccessLevel.PUBLIC) return false;
     PsiMethod methodParentOfType = PsiTreeUtil.getParentOfType(place, PsiMethod.class);
-    if (accessLevel == AccessLevel.PROTECTED && PsiClassUtil.hasParent(containingClass, field.getContainingClass())) return methodParentOfType != null && methodParentOfType.hasModifierProperty(PsiModifier.STATIC);
+    if (accessLevel == AccessLevel.PROTECTED && hasParent(containingClass, classContainingField)) return methodParentOfType != null && methodParentOfType.hasModifierProperty(PsiModifier.STATIC);
 
     if (field.getContainingFile().getName().equals(containingClass.getContainingFile().getName())) return false;
     return true;
