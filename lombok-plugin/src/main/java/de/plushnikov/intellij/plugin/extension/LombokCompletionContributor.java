@@ -70,7 +70,6 @@ import com.intellij.psi.PsiIdentifier;
 import com.intellij.psi.PsiImportStatementBase;
 import com.intellij.psi.PsiJavaCodeReferenceCodeFragment;
 import com.intellij.psi.PsiJavaCodeReferenceElement;
-import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiJavaReference;
 import com.intellij.psi.PsiJavaToken;
 import com.intellij.psi.PsiKeyword;
@@ -136,7 +135,6 @@ import static com.intellij.patterns.StandardPatterns.not;
 import static com.intellij.patterns.StandardPatterns.or;
 import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor.getType;
 import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodProcessor.getExtendingMethods;
-import static de.plushnikov.intellij.plugin.util.PsiClassUtil.hasParent;
 
 /**
  * @author Suburban Squirrel
@@ -477,24 +475,10 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
      */
     private boolean filterFieldDefault(@NotNull PsiField field, @Nullable PsiElement context) {
       if(context == null) return true;
-      PsiClass contextClass = PsiTreeUtil.getParentOfType(context, PsiClass.class);
 
-      if (field.hasModifierProperty(PsiModifier.PUBLIC)) return true;
-      PsiClass fieldClass = field.getContainingClass();
-      if (field.hasModifierProperty(PsiModifier.PRIVATE)) {
-        if (fieldClass != null && fieldClass.equals(contextClass)) {
-          return true;
-        } else {
-          return false;
-        }
-      }
-      if (field.hasModifierProperty(PsiModifier.PROTECTED)) {
-        if (contextClass == null || fieldClass == null) return false;
-        if (hasParent(contextClass, fieldClass) || ((PsiJavaFile) field.getContainingFile()).getPackageName().equals(((PsiJavaFile) context.getContainingFile()).getPackageName())) {
-          return true;
-        } else {
-          return false;
-        }
+      PsiClass contextClass = PsiTreeUtil.getParentOfType(context, PsiClass.class);
+      if (field.hasModifierProperty(PsiModifier.PUBLIC) || field.hasModifierProperty(PsiModifier.PRIVATE) || field.hasModifierProperty(PsiModifier.PROTECTED)) {
+        return JavaPsiFacade.getInstance(context.getProject()).getResolveHelper().isAccessible(field, context, field.getContainingClass());
       }
 
       return !LombokHighlightErrorFilter.isInaccessible(field, contextClass, context.getParent());
