@@ -4,28 +4,38 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType;
 import com.intellij.lang.annotation.HighlightSeverity;
+import com.intellij.openapi.editor.colors.CodeInsightColors;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiJavaFile;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiLocalVariable;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
+import com.intellij.psi.PsiModifierList;
+import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiSuperExpression;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeElement;
+import com.intellij.psi.impl.source.resolve.JavaResolveUtil;
+import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.psi.util.PsiTreeUtil;
+import com.intellij.psi.util.PsiUtil;
+import com.intellij.util.Query;
 import com.siyeh.ig.psiutils.ClassUtils;
 import de.plushnikov.intellij.plugin.handler.SneakyTrowsExceptionHandler;
 import de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor;
 import de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodProcessor;
+import de.plushnikov.intellij.plugin.psi.LombokLightModifierList;
+import de.plushnikov.intellij.plugin.util.LombokProcessorUtil;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.PackagePrivate;
 import lombok.val;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,7 +56,11 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
 
   @Override
   public boolean accept(@NotNull HighlightInfo highlightInfo, @Nullable PsiFile file) {
-    if (null != file && HighlightSeverity.ERROR.equals(highlightInfo.getSeverity())) {
+    if (file == null) return true;
+    if (HighlightSeverity.WARNING.equals(highlightInfo.getSeverity()) && CodeInsightColors.NOT_USED_ELEMENT_ATTRIBUTES.equals(highlightInfo.type.getAttributesKey())) {
+      return handleFieldDefaultsUnused(highlightInfo, file);
+    }
+    if (HighlightSeverity.ERROR.equals(highlightInfo.getSeverity())) {
       final String description = StringUtil.notNullize(highlightInfo.getDescription());
 
       if (HighlightInfoType.UNHANDLED_EXCEPTION.equals(highlightInfo.type) &&
@@ -85,6 +99,47 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
     return !val.class.getCanonicalName().equals(typeElement.getType().getCanonicalText());
   }
 
+  private boolean handleFieldDefaultsUnused(@NotNull HighlightInfo highlightInfo, @NotNull PsiFile file) {
+    PsiElement element = file.findElementAt(highlightInfo.getStartOffset());
+    if (element == null) return true;
+
+    PsiClass containingClass = getContainingClass(element);
+    if (containingClass == null) return true;
+
+    PsiField field = PsiTreeUtil.getParentOfType(element, PsiField.class);
+    if (field == null) return true;
+
+    PsiAnnotation annotation = PsiAnnotationUtil.findAnnotation(containingClass, FieldDefaults.class);
+    if (annotation == null || field.hasModifierProperty(PsiModifier.PUBLIC) || field.hasModifierProperty(PsiModifier.PROTECTED) || field.hasModifierProperty(PsiModifier.PRIVATE)) return true;
+
+    Query<PsiReference> search = ReferencesSearch.search(field, field.getResolveScope(), true);
+    boolean isUses = search.iterator().hasNext();                                                 // find some uses
+    if (!isUses) return true;                                                                     // remain info
+
+    String level = PsiAnnotationUtil.getAnnotationValue(annotation, "level", String.class);
+    if (level == null) return true;
+
+    AccessLevel accessLevel = AccessLevel.valueOf(level);
+    if (accessLevel == AccessLevel.PUBLIC) return false;                                // remove this info
+
+    if (accessLevel == AccessLevel.PROTECTED) {
+      for (PsiReference reference : search) {
+        PsiClass classWithUsed = PsiTreeUtil.getParentOfType(reference.getElement(), PsiClass.class);
+        if (classWithUsed == null) continue;
+        if (hasParent(classWithUsed, containingClass)) return false;
+      }
+    }
+
+    if (accessLevel == AccessLevel.PRIVATE) {
+      for (PsiReference reference : search) {
+        PsiClass classWithUsed = PsiTreeUtil.getParentOfType(reference.getElement(), PsiClass.class);
+        if (containingClass.equals(classWithUsed)) return false;
+      }
+    }
+
+    return true;                                  // also if accessLevel == AccessLevel.PACKAGE
+  }
+
   private boolean handleFieldDefaultsFieldAccess(@NotNull HighlightInfo highlightInfo, @NotNull PsiFile file) {
     PsiElement element = file.findElementAt(highlightInfo.getStartOffset());
     if (element == null) return true;
@@ -96,42 +151,58 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
     if (psiElement == null || !(psiElement instanceof PsiField)) return true;
 
     PsiField field = (PsiField) psiElement;
-    return isInaccessible(field, containingClass, element);
+    return !isAccessible(field, element);
   }
 
-  public static boolean isInaccessible(@NotNull PsiField field, @NotNull PsiClass containingClass, @NotNull PsiElement place) {
-    if (field.hasModifierProperty(PsiModifier.PRIVATE) || field.hasModifierProperty(PsiModifier.PROTECTED) || field.hasModifierProperty(PsiModifier.PUBLIC)) return true;    // obviously marked
+  public static boolean isAccessible(@NotNull PsiField field, @NotNull PsiElement place) {
+    PsiClass contextClass = findContextForPlace(place);                                                                                     // find context
+    PsiModifierList modifierList = field.getModifierList();
+    PsiAnnotation annotation = findAnnotation(field.getContainingClass(), FieldDefaults.class.getCanonicalName());
 
-    PsiClass classContainingField = field.getContainingClass();
-    if (classContainingField == null) return true;
+    if (!field.hasModifierProperty(PsiModifier.PUBLIC) && !field.hasModifierProperty(PsiModifier.PRIVATE) && !field.hasModifierProperty(PsiModifier.PROTECTED) && annotation != null) {
+      String access = LombokProcessorUtil.convertAccessLevelToJavaString(PsiAnnotationUtil.getAnnotationValue(annotation, "level", String.class));
 
-    PsiAnnotation annotation = findAnnotation(classContainingField, FieldDefaults.class.getCanonicalName());
-    if (annotation == null) return true;                                                                                                                        // can't find annotation
+      if (!"".equals(access)) {
+        List<String> modifiers = new ArrayList<String>(2){{ add(access); }};
+        if (field.hasModifierProperty(PsiModifier.STATIC)) modifiers.add(PsiModifier.STATIC);
 
-    AccessLevel accessLevel = AccessLevel.valueOf(PsiAnnotationUtil.getAnnotationValue(annotation, "level", String.class));                                     // get access level
-  // check PackagePrivate annotation before accessLevel attribute
-    PsiAnnotation packagePrivate = PsiAnnotationUtil.findAnnotation(field, PackagePrivate.class.getCanonicalName());
-    if ((packagePrivate != null || accessLevel == AccessLevel.PACKAGE || accessLevel == AccessLevel.PROTECTED)
-        && ((PsiJavaFile) field.getContainingFile()).getPackageName().equals(((PsiJavaFile) containingClass).getPackageName())) {
-      return false;                                                                                                                                             // same package
+        modifierList = new LombokLightModifierList(field.getManager(), field.getLanguage(), modifiers.toArray(new String[modifiers.size()]));
+      }
     }
 
-    List<PsiClass> topClasses = new ArrayList<PsiClass>();
-    PsiClass topClass = containingClass;
-    do {
-      topClasses.add(topClass);
-      topClass = PsiTreeUtil.getParentOfType(topClass, PsiClass.class);
-    } while (topClass != null);
-
-    if (accessLevel == AccessLevel.PRIVATE && topClasses.contains(classContainingField)) return false;
-    if (accessLevel == AccessLevel.NONE || accessLevel == AccessLevel.PRIVATE) return true;
-    if (accessLevel == AccessLevel.PUBLIC) return false;
-    PsiMethod methodParentOfType = PsiTreeUtil.getParentOfType(place, PsiMethod.class);
-    if (accessLevel == AccessLevel.PROTECTED && hasParent(containingClass, classContainingField)) return methodParentOfType != null && methodParentOfType.hasModifierProperty(PsiModifier.STATIC);
-
-    if (field.getContainingFile().getName().equals(containingClass.getContainingFile().getName())) return false;
-    return true;
+    return JavaResolveUtil.isAccessible(field, field.getContainingClass(), modifierList, place, contextClass, null);
   }
+
+    /**
+     * Copy peace from inner IDEA method
+     */
+    private static PsiClass findContextForPlace(PsiElement context) {
+      PsiClass contextClass = null;
+      PsiElement elementParent = context.getContext();
+      if (elementParent instanceof PsiReferenceExpression) {
+        PsiExpression qualifier = ((PsiReferenceExpression) elementParent).getQualifierExpression();
+        if (qualifier instanceof PsiSuperExpression) {
+          final PsiJavaCodeReferenceElement qSuper = ((PsiSuperExpression) qualifier).getQualifier();
+          if (qSuper == null) {
+            contextClass = JavaResolveUtil.getContextClass(context);
+          } else {
+            final PsiElement target = qSuper.resolve();
+            contextClass = target instanceof PsiClass ? (PsiClass) target : null;
+          }
+        } else if (qualifier != null) {
+          contextClass = PsiUtil.resolveClassInClassTypeOnly(qualifier.getType());
+          if (qualifier.getType() == null && qualifier instanceof PsiJavaCodeReferenceElement) {
+            final PsiElement target = ((PsiJavaCodeReferenceElement) qualifier).resolve();
+            if (target instanceof PsiClass) {
+              contextClass = (PsiClass) target;
+            }
+          }
+        } else {
+          contextClass = JavaResolveUtil.getContextClass(context);
+        }
+      }
+      return contextClass;
+    }
 
   /**
    * remove highlight error of extension method for primitive type

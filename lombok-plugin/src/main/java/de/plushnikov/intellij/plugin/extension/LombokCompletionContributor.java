@@ -482,9 +482,13 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     private boolean filterFieldDefault(@NotNull PsiField field, @Nullable PsiElement context) {
       if(context == null) return true;
 
-      PsiClass containClass = PsiTreeUtil.getParentOfType(context, PsiClass.class);
+      return LombokHighlightErrorFilter.isAccessible(field, context);
+    }
 
-    // find context
+    /**
+     * Copy peace from inner IDEA method
+     */
+    private PsiClass findContextForPlace(PsiElement context) {
       PsiClass contextClass = null;
       PsiElement elementParent = context.getContext();
       if (elementParent instanceof PsiReferenceExpression) {
@@ -509,14 +513,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
           contextClass = JavaResolveUtil.getContextClass(context);
         }
       }
-
-      boolean access = JavaResolveUtil.isAccessible(field, field.getContainingClass(), field.getModifierList(), context, contextClass, null);
-
-      if (containClass == null || field.getContainingClass() == null) return false;
-      if (!isAnnotatedWith(field.getContainingClass(), FieldDefaults.class) || field.hasModifierProperty(PsiModifier.PUBLIC)
-          || field.hasModifierProperty(PsiModifier.PRIVATE) || field.hasModifierProperty(PsiModifier.PROTECTED)) return access;
-
-      return !LombokHighlightErrorFilter.isInaccessible(field, containClass, context.getParent());
+      return contextClass;
     }
 
     private boolean filterExtensionMethods(@NotNull PsiMethod method, @Nullable PsiElement context) {

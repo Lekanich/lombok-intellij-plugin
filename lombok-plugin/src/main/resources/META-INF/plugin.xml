@@ -3,7 +3,7 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.0.23</version>
+  <version>1.0.24</version>
 
   <idea-version since-build="133.00"/>
 
@@ -44,6 +44,7 @@
                             order="last, before legacy, before default, before javaClassName, before javaLegacy"/>
     <completion.contributor language="JAVA" id="primitiveLombokContributor" implementationClass="de.plushnikov.intellij.plugin.extension.LombokPrimitiveCompletionContributor"
                             order="last, before legacy, before default, before javaClassName, before lombokContributor"/>
+    <useScopeEnlarger implementation="de.plushnikov.intellij.plugin.extension.LombokUseScopeEnlarger"/>
   </extensions>
 
   <extensions defaultExtensionNs="lombok-plugin">
@@ -180,6 +181,9 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.0.24
+		    <br> Fixed find scope for fields with FieldDefaults
+			</li>
 		<li>1.0.23
 		    <br> change protected recognize
 			</li>
