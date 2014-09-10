@@ -45,6 +45,7 @@
     <completion.contributor language="JAVA" id="primitiveLombokContributor" implementationClass="de.plushnikov.intellij.plugin.extension.LombokPrimitiveCompletionContributor"
                             order="last, before legacy, before default, before javaClassName, before lombokContributor"/>
     <useScopeEnlarger implementation="de.plushnikov.intellij.plugin.extension.LombokUseScopeEnlarger"/>
+    <annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokErrorAnnotator"/>
   </extensions>
 
   <extensions defaultExtensionNs="lombok-plugin">
@@ -183,6 +184,7 @@
 		<ul>
 		<li>1.0.24
 		    <br> Fixed find scope for fields with FieldDefaults
+		    <br> Fixed errors for FieldDefaults (add special errors)
 			</li>
 		<li>1.0.23
 		    <br> change protected recognize
