@@ -174,11 +174,12 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
   }
 
     /**
-     * Copy peace from inner IDEA method
+     * Copy peace from inner IDEA method (JavaCompletionProcessor (constructor))
      */
     private static PsiClass findContextForPlace(PsiElement context) {
       PsiClass contextClass = null;
-      PsiElement elementParent = context.getContext();
+      PsiElement elementParent = context;
+      if (context.getText().contains("IntellijIdeaRulezzz")) elementParent = context.getContext();
       if (elementParent instanceof PsiReferenceExpression) {
         PsiExpression qualifier = ((PsiReferenceExpression) elementParent).getQualifierExpression();
         if (qualifier instanceof PsiSuperExpression) {

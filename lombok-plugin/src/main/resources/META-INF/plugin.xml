@@ -3,7 +3,7 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.0.24</version>
+  <version>1.0.25</version>
 
   <idea-version since-build="133.00"/>
 
@@ -182,6 +182,9 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.0.25
+		    <br> Fixed errors for FieldDefaults private
+			</li>
 		<li>1.0.24
 		    <br> Fixed find scope for fields with FieldDefaults
 		    <br> Fixed errors for FieldDefaults (add special errors)

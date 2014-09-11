@@ -79,6 +79,7 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiNameValuePair;
 import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiQualifiedExpression;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiReferenceParameterList;
@@ -100,7 +101,6 @@ import com.intellij.psi.filters.TrueFilter;
 import com.intellij.psi.filters.element.ModifierFilter;
 import com.intellij.psi.filters.getters.JavaMembersGetter;
 import com.intellij.psi.impl.source.PsiLabelReference;
-import com.intellij.psi.impl.source.resolve.JavaResolveUtil;
 import com.intellij.psi.scope.ElementClassFilter;
 import com.intellij.psi.util.InheritanceUtil;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -470,7 +470,6 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
 
     @Override
     public boolean isAcceptable(Object element, @Nullable PsiElement context) {
-//      if (!filterVal((PsiElement)element, context)) return false;
       if (element instanceof PsiMethod) return filterExtensionMethods((PsiMethod) element, context);
       if (element instanceof PsiField) return filterFieldDefault((PsiField) element, context);
       return true;
@@ -483,37 +482,6 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
       if(context == null) return true;
 
       return LombokHighlightErrorFilter.isAccessible(field, context);
-    }
-
-    /**
-     * Copy peace from inner IDEA method
-     */
-    private PsiClass findContextForPlace(PsiElement context) {
-      PsiClass contextClass = null;
-      PsiElement elementParent = context.getContext();
-      if (elementParent instanceof PsiReferenceExpression) {
-        PsiExpression qualifier = ((PsiReferenceExpression) elementParent).getQualifierExpression();
-        if (qualifier instanceof PsiSuperExpression) {
-          final PsiJavaCodeReferenceElement qSuper = ((PsiSuperExpression) qualifier).getQualifier();
-          if (qSuper == null) {
-            contextClass = JavaResolveUtil.getContextClass(context);
-          } else {
-            final PsiElement target = qSuper.resolve();
-            contextClass = target instanceof PsiClass ? (PsiClass) target : null;
-          }
-        } else if (qualifier != null) {
-          contextClass = PsiUtil.resolveClassInClassTypeOnly(qualifier.getType());
-          if (qualifier.getType() == null && qualifier instanceof PsiJavaCodeReferenceElement) {
-            final PsiElement target = ((PsiJavaCodeReferenceElement) qualifier).resolve();
-            if (target instanceof PsiClass) {
-              contextClass = (PsiClass) target;
-            }
-          }
-        } else {
-          contextClass = JavaResolveUtil.getContextClass(context);
-        }
-      }
-      return contextClass;
     }
 
     private boolean filterExtensionMethods(@NotNull PsiMethod method, @Nullable PsiElement context) {
@@ -771,7 +739,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
               psiClass = PsiTreeUtil.getParentOfType(((PsiReferenceExpression) reference).getReferenceNameElement(), PsiClass.class);
             }
             if (qualifier instanceof PsiThisExpression || qualifier instanceof PsiSuperExpression) {
-              psiClass = getPsiClass(((PsiThisExpression) qualifier).getType());
+              psiClass = getPsiClass(((PsiQualifiedExpression) qualifier).getType());
             }
 
             if (psiClass != null) {
