@@ -10,10 +10,12 @@ import com.intellij.psi.PsiIdentifier;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.util.PsiTreeUtil;
+import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
+import lombok.experimental.FieldDefaults;
 import org.jetbrains.annotations.NotNull;
 
 import static com.siyeh.ig.psiutils.ClassUtils.getContainingClass;
-import static de.plushnikov.intellij.plugin.extension.LombokHighlightErrorFilter.isAccessible;
+import static de.plushnikov.intellij.plugin.handler.FieldDefaultsUtil.isAccessible;
 
 /**
  * @author Suburban Squirrel
@@ -21,6 +23,8 @@ import static de.plushnikov.intellij.plugin.extension.LombokHighlightErrorFilter
  * @since 1.0.25
  */
 final public class LombokErrorAnnotator implements Annotator {
+  private static final String MESSAGE = "Can't resolve cause @FD changed visibility";
+
   @Override
   public void annotate(@NotNull PsiElement element, @NotNull AnnotationHolder holder) {
     if (!(element instanceof PsiReferenceExpression)) return;
@@ -34,12 +38,12 @@ final public class LombokErrorAnnotator implements Annotator {
 
     PsiField field = (PsiField) psiElement;
     if (field.hasModifierProperty(PsiModifier.PUBLIC) || field.hasModifierProperty(PsiModifier.PROTECTED) || field.hasModifierProperty(PsiModifier.PRIVATE)) return;
-    if (isAccessible(field, element)) return;
+    PsiClass fieldClass = field.getContainingClass();
+    if (fieldClass != null && !PsiAnnotationUtil.isAnnotatedWith(fieldClass, FieldDefaults.class)) return;                               // check only field with @FieldDefaults changes
 
     PsiElement errorElement = PsiTreeUtil.getChildOfType(expression, PsiIdentifier.class);
-    if (errorElement == null) errorElement = expression;
+    if (errorElement == null || isAccessible(field, errorElement)) return;
 
-  // error for unresolved fields
-    holder.createErrorAnnotation(errorElement, "can't resolve (@FD)").setTextAttributes(CodeInsightColors.WRONG_REFERENCES_ATTRIBUTES);
+    holder.createErrorAnnotation(errorElement, MESSAGE).setTextAttributes(CodeInsightColors.WRONG_REFERENCES_ATTRIBUTES);             // error for unresolved fields
   }
 }

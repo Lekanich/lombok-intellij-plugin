@@ -20,8 +20,8 @@ import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.augment.PsiAugmentProvider;
 import de.plushnikov.intellij.plugin.extension.LombokProcessorExtensionPoint;
 import de.plushnikov.intellij.plugin.extension.UserMapKeys;
+import de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil;
 import de.plushnikov.intellij.plugin.processor.Processor;
-import de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor;
 import de.plushnikov.intellij.plugin.settings.DefaultSettings;
 import de.plushnikov.intellij.plugin.settings.ProjectSettings;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
@@ -35,6 +35,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.isExtensible;
 
 /**
  * Provides support for lombok generated elements
@@ -151,7 +153,7 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
   }
 
   private boolean verifyLombokPresent(@NotNull PsiClass psiClass) {
-    if (ExtensionMethodBuilderProcessor.isExtensible(psiClass)) {
+    if (isExtensible(psiClass)) {
       return true;
     }
     if (checkAnnotations(psiClass)) {
@@ -186,6 +188,7 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
     return false;
   }
 
+  // draft --SS (get config keys)
   private void readAnnotationConfiguration(Project project) {
 		ProcessorConfigProfile defaultProfile = new ProcessorConfigProfileImpl("");
 		List<ProcessorConfigProfile> moduleProfiles = new ArrayList<>();

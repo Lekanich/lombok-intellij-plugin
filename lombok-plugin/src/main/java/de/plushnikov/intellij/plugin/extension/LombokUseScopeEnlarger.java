@@ -52,7 +52,7 @@ final public class LombokUseScopeEnlarger extends UseScopeEnlarger {
     };
     fieldWithLombokAccess.withModifier(convertAccessLevelToJavaString(getAnnotationValue(annotation, "level", String.class)));
     fieldWithLombokAccess.setContainingClass((field.getContainingClass()));
-    if (field.hasModifierProperty(PsiModifier.STATIC)) fieldWithLombokAccess.withModifier(PsiModifier.STATIC);
+    if (field.hasModifierProperty(PsiModifier.STATIC)) fieldWithLombokAccess.withModifier(PsiModifier.STATIC);            // todo I think this doesn't need
 
     return PsiImplUtil.getMemberUseScope(fieldWithLombokAccess);
   }

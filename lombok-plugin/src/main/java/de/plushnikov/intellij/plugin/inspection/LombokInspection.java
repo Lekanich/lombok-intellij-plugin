@@ -16,10 +16,9 @@ import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.util.PsiTreeUtil;
 import de.plushnikov.intellij.plugin.extension.LombokProcessorExtensionPoint;
-import de.plushnikov.intellij.plugin.handler.FieldDefaultsHandler;
+import de.plushnikov.intellij.plugin.handler.FieldDefaultsUtil;
 import de.plushnikov.intellij.plugin.problem.LombokProblem;
 import de.plushnikov.intellij.plugin.processor.Processor;
-import de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor;
 import de.plushnikov.intellij.plugin.psi.LombokLightMethodBuilder;
 import gnu.trove.THashMap;
 import org.apache.commons.lang.StringUtils;
@@ -31,8 +30,9 @@ import java.util.HashSet;
 import java.util.Map;
 
 import static de.plushnikov.intellij.plugin.extension.LombokCompletionContributor.LombokElementFilter.getCallType;
-import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor.isInExtensionScope;
-import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodProcessor.getExtendingMethods;
+import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getExtendingMethods;
+import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getType;
+import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.isInExtensionScope;
 
 /**
  * @author Plushnikov Michail
@@ -99,12 +99,6 @@ public class LombokInspection extends BaseJavaLocalInspectionTool {
 
         PsiMethod psiMethod = (PsiMethod) resolve;
 
-      // check lombok.val
-//        if (AbstractValProcessor.isVal(callType)) {
-//          if (!filterVal(psiMethod, expression.getMethodExpression(), currentClass)) {
-//            holder.registerProblem(expression.getMethodExpression(), String.format("Cannot resolve method '%s()'...", psiMethod.getName()), ProblemHighlightType.ERROR);
-//          }
-//        }
         PsiClass methodContainingClass = psiMethod.getContainingClass();
         if (methodContainingClass == null || currentClass.getQualifiedName() == null) return;
         if (!(psiMethod instanceof LombokLightMethodBuilder) || methodContainingClass.getQualifiedName() == null || methodContainingClass.getQualifiedName().endsWith(currentClass.getQualifiedName())) {
@@ -119,7 +113,7 @@ public class LombokInspection extends BaseJavaLocalInspectionTool {
             continue;
           }
 
-          PsiType type = ExtensionMethodBuilderProcessor.getType(method.getParameterList().getParameters()[0].getType(), method);
+          PsiType type = getType(method.getParameterList().getParameters()[0].getType(), method);
           if (type.isAssignableFrom(callType)) {
             if (!isInExtensionScope(currentClass)) {
               foundProblem = true;
@@ -143,7 +137,7 @@ public class LombokInspection extends BaseJavaLocalInspectionTool {
       @Override
       public void visitClass(PsiClass aClass) {
         super.visitClass(aClass);
-        FieldDefaultsHandler.handleClass(aClass, holder);
+        FieldDefaultsUtil.handleClass(aClass, holder);
       }
 
       @Override

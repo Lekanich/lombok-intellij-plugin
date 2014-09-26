@@ -41,7 +41,7 @@ public class PsiFieldUtil {
   }
 
   public static boolean isFinal(@NotNull PsiField psiField) {
-    if (psiField.getModifierList().hasModifierProperty(PsiModifier.FINAL)) return true;
+    if (psiField.hasModifierProperty(PsiModifier.FINAL)) return true;
     PsiClass containingClass = psiField.getContainingClass();
     if (containingClass == null) return false;
 

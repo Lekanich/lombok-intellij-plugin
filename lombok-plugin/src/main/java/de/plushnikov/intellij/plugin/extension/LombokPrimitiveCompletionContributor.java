@@ -22,10 +22,10 @@ import static com.intellij.psi.util.PsiTreeUtil.findChildrenOfType;
 import static com.intellij.psi.util.PsiTreeUtil.getParentOfType;
 import static com.siyeh.ig.psiutils.ClassUtils.getContainingClass;
 import static com.siyeh.ig.psiutils.ClassUtils.isPrimitive;
-import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor.createExtensionMethod;
-import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor.getType;
-import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor.isInExtensionScope;
-import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodProcessor.getExtendingMethods;
+import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.createExtensionMethod;
+import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getType;
+import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.isInExtensionScope;
+import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getExtendingMethods;
 import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.isAnnotatedWith;
 
 

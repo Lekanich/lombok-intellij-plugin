@@ -112,13 +112,11 @@ import com.intellij.util.Function;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ProcessingContext;
 import com.siyeh.ig.psiutils.ClassUtils;
-import de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import lombok.experimental.FieldDefaults;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -137,12 +135,16 @@ import static com.intellij.patterns.PsiJavaPatterns.psiReferenceExpression;
 import static com.intellij.patterns.StandardPatterns.not;
 import static com.intellij.patterns.StandardPatterns.or;
 import static com.intellij.psi.util.PsiTypesUtil.getPsiClass;
-import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor.getType;
-import static de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodProcessor.getExtendingMethods;
+import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getExtendingMethods;
+import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getType;
+import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.isInExtensionScope;
+import static de.plushnikov.intellij.plugin.handler.FieldDefaultsUtil.isAccessible;
 import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.isAnnotatedWith;
 import static de.plushnikov.intellij.plugin.util.PsiClassUtil.getAllParents;
 
 /**
+ * Replace JavaCompletionContributor, because he placed before {@code com.intellij.codeInsight.completion.JavaCompletionContributor}
+ *
  * @author Suburban Squirrel
  * @version 0.8.6
  * @since 0.8.6
@@ -154,21 +156,21 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
   private static final PsiNameValuePairPattern NAME_VALUE_PAIR = psiNameValuePair().withSuperParent(2, psiElement(PsiAnnotation.class));
   private static final ElementPattern<PsiElement> ANNOTATION_ATTRIBUTE_NAME = or(psiElement(PsiIdentifier.class).withParent(NAME_VALUE_PAIR),
         psiElement().afterLeaf("(").withParent(psiReferenceExpression().withParent(NAME_VALUE_PAIR)));
-  private static final ElementPattern SWITCH_LABEL = psiElement().withSuperParent(2, psiElement(PsiSwitchLabelStatement.class).withSuperParent(2,
-        psiElement(PsiSwitchStatement.class).with(new PatternCondition<PsiSwitchStatement>("enumExpressionType") {
-          @Override
-          public boolean accepts(@NotNull PsiSwitchStatement psiSwitchStatement, ProcessingContext context) {
-            final PsiExpression expression = psiSwitchStatement.getExpression();
-            if (expression == null) return false;
-            PsiClass aClass = PsiUtil.resolveClassInClassTypeOnly(expression.getType());
-            return aClass != null && aClass.isEnum();
-          }
-        })
-    ));
-  private static final ElementPattern<PsiElement> AFTER_NUMBER_LITERAL = psiElement().afterLeaf(psiElement().withElementType(elementType().oneOf(JavaTokenType.DOUBLE_LITERAL, JavaTokenType.LONG_LITERAL,
-        JavaTokenType.FLOAT_LITERAL, JavaTokenType.INTEGER_LITERAL)));
+  private static final ElementPattern<PsiElement> AFTER_NUMBER_LITERAL = psiElement().afterLeaf(psiElement().withElementType(elementType()
+      .oneOf(JavaTokenType.DOUBLE_LITERAL, JavaTokenType.LONG_LITERAL, JavaTokenType.FLOAT_LITERAL, JavaTokenType.INTEGER_LITERAL)));
   private static final ElementPattern<PsiElement> IMPORT_REFERENCE = psiElement().withParent(psiElement(PsiJavaCodeReferenceElement.class).withParent(PsiImportStatementBase.class));
-  static final PsiElementPattern.Capture<PsiElement> IN_TYPE_ARGS = PlatformPatterns.psiElement().inside(PlatformPatterns.psiElement(PsiReferenceParameterList.class));
+  private static final PsiElementPattern.Capture<PsiElement> IN_TYPE_ARGS = PlatformPatterns.psiElement().inside(PlatformPatterns.psiElement(PsiReferenceParameterList.class));
+  private static final ElementPattern SWITCH_LABEL = psiElement().withSuperParent(2, psiElement(PsiSwitchLabelStatement.class).withSuperParent(2,
+      psiElement(PsiSwitchStatement.class).with(new PatternCondition<PsiSwitchStatement>("enumExpressionType") {
+        @Override
+        public boolean accepts(@NotNull PsiSwitchStatement psiSwitchStatement, ProcessingContext context) {
+          final PsiExpression expression = psiSwitchStatement.getExpression();
+          if (expression == null) return false;
+          PsiClass aClass = PsiUtil.resolveClassInClassTypeOnly(expression.getType());
+          return aClass != null && aClass.isEnum();
+        }
+      })
+  ));
 
   static {
     ourCompletionData = new LinkedHashMap<LanguageLevel, JavaCompletionData>();
@@ -181,9 +183,8 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
    * clone from com.intellij.codeInsight.completion.TypeArgumentCompletionProvider
    */
   final private static class TypeArgumentCompletionProvider extends CompletionProvider<CompletionParameters> {
+    @Nullable private final InheritorsHolder myInheritors;
     private final boolean mySmart;
-    @Nullable
-    private final InheritorsHolder myInheritors;
 
     TypeArgumentCompletionProvider(boolean smart, @Nullable InheritorsHolder inheritors) {
       mySmart = smart;
@@ -195,9 +196,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
       final PsiElement context = parameters.getPosition();
 
       final Pair<PsiClass, Integer> pair = getTypeParameterInfo(context);
-      if (pair == null) {
-        return;
-      }
+      if (pair == null) return;
 
       PsiExpression expression = PsiTreeUtil.getContextOfType(context, PsiExpression.class, true);
       if (expression != null) {
@@ -213,9 +212,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
         }
       }
 
-      if (mySmart) {
-        addInheritors(parameters, resultSet, pair.first, pair.second);
-      }
+      if (mySmart) addInheritors(parameters, resultSet, pair.first, pair.second);
     }
 
     private void fillExpectedTypeArgs(CompletionResultSet resultSet,
@@ -479,9 +476,8 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
      * also manual handle access modifiers
      */
     private boolean filterFieldDefault(@NotNull PsiField field, @Nullable PsiElement context) {
-      if(context == null) return true;
+      return context == null || isAccessible(field, context);
 
-      return LombokHighlightErrorFilter.isAccessible(field, context);
     }
 
     private boolean filterExtensionMethods(@NotNull PsiMethod method, @Nullable PsiElement context) {
@@ -499,7 +495,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
       for (PsiMethod psiMethod : getExtendingMethods(containingClass)) {
         if (psiMethod.getName().equals(method.getName())) {
           PsiType paramType = getType(psiMethod.getParameterList().getParameters()[0].getType(), psiMethod);
-          if (paramType.isAssignableFrom(type) && ExtensionMethodBuilderProcessor.isInExtensionScope(containingClass)) {
+          if (paramType.isAssignableFrom(type) && isInExtensionScope(containingClass)) {
             return true;
           }
           result = false;
@@ -520,7 +516,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     }
 
     @Nullable
-    public static PsiElement getCallElement(@NotNull PsiExpression expression, @NotNull PsiClass currentClass) {
+    public static PsiType getCallType(@NotNull PsiExpression expression, @NotNull PsiClass currentClass) {
       List<PsiJavaToken> tokens = new ArrayList<PsiJavaToken>(PsiTreeUtil.findChildrenOfType(expression, PsiJavaToken.class));
       PsiJavaToken dot = null;
 
@@ -530,16 +526,9 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
           break;
         }
       }
-      return dot != null ? dot.getPrevSibling() : null;
-    }
+      PsiElement callSibling = (dot != null ? dot.getPrevSibling() : null);
 
-    @Nullable
-    public static PsiType getCallType(@NotNull PsiExpression expression, @NotNull PsiClass currentClass) {
-      PsiElement callSibling = getCallElement(expression, currentClass);
-      if (callSibling instanceof PsiExpression) {
-        return ((PsiExpression) callSibling).getType();
-      }
-      return PsiTypesUtil.getClassType(currentClass);
+      return callSibling instanceof PsiExpression ? ((PsiExpression) callSibling).getType() : PsiTypesUtil.getClassType(currentClass);
     }
   }
 
@@ -605,17 +594,6 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
       new JavaStaticMemberProcessor(parameters).processStaticMethodsGlobally(matcher, result);
     }
     result.stopHere();
-  }
-
-  private static Object callMethod(Object thisObj, @NotNull Class aClass, String name, Class[] classes, Object[] objects) {
-    try {
-      Method method = aClass.getDeclaredMethod(name, classes);
-      method.setAccessible(true);
-      return method.invoke(thisObj, objects);
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw new RuntimeException(e);
-    }
   }
 
   private static void completeAnnotationAttributeName(CompletionResultSet result, PsiElement insertedElement,
@@ -731,7 +709,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
           if (reference instanceof PsiReferenceExpression) {
             PsiElement qualifier = ((PsiReferenceExpression) reference).getQualifier();
             if (qualifier instanceof PsiReferenceExpression) {
-              checkAccess = !hasFieldDefaults((PsiReferenceExpression) qualifier);   // if found annotation try see all elements
+              checkAccess = !hasFieldDefaults((PsiReferenceExpression) qualifier);           // if found annotation try see all elements
             }
 
             PsiClass psiClass = null;
@@ -806,17 +784,13 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
             try {
               Class<?> aClass = Class.forName("JavaClassNameInsertHandler");
               Object o = aClass.newInstance();
-              List<JavaPsiClassReferenceElement> list = (List<JavaPsiClassReferenceElement>) callMethod((Object)null, aClass, "createClassLookupItems",
-                  new Class[]{PsiClass.class, boolean.class, InsertHandler.class, Condition.class}, new Object[]{completion, isAfterNew,
-                      o, new Condition<PsiClass>() {
+              for (JavaPsiClassReferenceElement item : JavaClassNameCompletionContributor.createClassLookupItems((PsiClass) completion, isAfterNew,
+                  (InsertHandler<JavaPsiClassReferenceElement>) o, new Condition<PsiClass>() {
                     @Override
                     public boolean value(PsiClass psiClass) {
                       return !inheritors.alreadyProcessed(psiClass) && JavaCompletionUtil.isSourceLevelAccessible(position, psiClass, pkgContext);
                     }
-                  }
-              });
-
-              for (JavaPsiClassReferenceElement item : list) {
+                  })) {
                 usedWords.add(item.getLookupString());
                 result.addElement(item);
               }
@@ -857,7 +831,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
   public static ElementFilter getReferenceFilter(PsiElement position) {
     ElementFilter filter = JavaCompletionContributor.getReferenceFilter(position);
     if (filter == TrueFilter.INSTANCE) {
-      return LombokElementFilter.INSTANCE;
+      return LombokElementFilter.INSTANCE;              // replace filter
     }
     return filter;
   }
