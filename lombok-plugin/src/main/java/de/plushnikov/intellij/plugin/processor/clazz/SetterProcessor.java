@@ -93,7 +93,7 @@ public class SetterProcessor extends AbstractClassProcessor {
           createSetter &= !PsiMethodUtil.hasSimilarMethod(classMethods, methodName, 1);
         }
       }
-      if (createSetter) {
+      if (createSetter && psiField.getContainingClass() != null) {
         result.add(fieldProcessor.createSetterMethod(psiField, methodModifier));
       }
     }

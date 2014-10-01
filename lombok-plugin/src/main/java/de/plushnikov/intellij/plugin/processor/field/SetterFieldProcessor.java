@@ -46,7 +46,7 @@ public class SetterFieldProcessor extends AbstractFieldProcessor {
   @Override
   protected void generatePsiElements(@NotNull PsiField psiField, @NotNull PsiAnnotation psiAnnotation, @NotNull List<? super PsiElement> target) {
     final String methodVisibility = LombokProcessorUtil.getMethodModifier(psiAnnotation);
-    if (methodVisibility != null) {
+    if (methodVisibility != null && psiField.getContainingClass() != null) {
       target.add(createSetterMethod(psiField, methodVisibility));
     }
   }

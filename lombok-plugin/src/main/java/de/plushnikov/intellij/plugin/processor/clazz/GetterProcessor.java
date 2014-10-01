@@ -91,7 +91,7 @@ public class GetterProcessor extends AbstractClassProcessor {
         }
       }
 
-      if (createGetter) {
+      if (createGetter && psiField.getContainingClass() != null) {
         result.add(fieldProcessor.createGetterMethod(psiField, methodModifier));
       }
     }
