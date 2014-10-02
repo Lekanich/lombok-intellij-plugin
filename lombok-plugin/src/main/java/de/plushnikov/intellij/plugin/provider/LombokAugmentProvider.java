@@ -5,18 +5,10 @@ import com.intellij.compiler.CompilerConfigurationImpl;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.util.text.StringUtil;
-import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
-import com.intellij.psi.PsiImportList;
-import com.intellij.psi.PsiImportStatementBase;
-import com.intellij.psi.PsiJavaCodeReferenceElement;
-import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiModifierList;
-import com.intellij.psi.PsiModifierListOwner;
 import com.intellij.psi.augment.PsiAugmentProvider;
 import de.plushnikov.intellij.plugin.extension.LombokProcessorExtensionPoint;
 import de.plushnikov.intellij.plugin.extension.UserMapKeys;
@@ -24,11 +16,13 @@ import de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil;
 import de.plushnikov.intellij.plugin.processor.Processor;
 import de.plushnikov.intellij.plugin.settings.DefaultSettings;
 import de.plushnikov.intellij.plugin.settings.ProjectSettings;
+import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.java.compiler.ProcessorConfigProfile;
 import org.jetbrains.jps.model.java.impl.compiler.ProcessorConfigProfileImpl;
 
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -45,7 +39,6 @@ import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.isExtens
  */
 public class LombokAugmentProvider extends PsiAugmentProvider {
   private static final Logger log = Logger.getInstance(LombokAugmentProvider.class.getName());
-  private static final String LOMBOK_PREFIX_MARKER = "lombok.";
 
   private final static ThreadLocal<Set<AugmentCallData>> recursionBreaker = new ThreadLocal<Set<AugmentCallData>>() {
     @Override
@@ -53,6 +46,8 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
       return new HashSet<AugmentCallData>();
     }
   };
+
+  private Collection<String> registeredAnnotationNames;
 
   public LombokAugmentProvider() {
     log.debug("LombokAugmentProvider created");
@@ -88,13 +83,13 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
       return emptyResult;
     }
 
-//    readAnnotationConfiguration(project);
+    initRegisteredAnnotations();
 
     recursionBreaker.get().add(currentAugmentData);
     try {
       final PsiClass psiClass = (PsiClass) element;
 
-      final boolean isLombokPresent = UserMapKeys.isLombokPossiblePresent(element) || checkImportSection(psiClass);
+      final boolean isLombokPresent = UserMapKeys.isLombokPossiblePresent(element);
       if (!isLombokPresent) {
         if (log.isDebugEnabled()) {
           log.debug(String.format("Skipped call for type: %s class: %s", type, psiClass.getQualifiedName()));
@@ -105,6 +100,20 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
       return process(type, project, psiClass);
     } finally {
       recursionBreaker.get().remove(currentAugmentData);
+    }
+  }
+
+  private void initRegisteredAnnotations() {
+    if (null == registeredAnnotationNames) {
+      final Collection<String> nameSet = new HashSet<String>();
+
+      for (Processor processor : LombokProcessorExtensionPoint.EP_NAME.getExtensions()) {
+        Class<? extends Annotation> annotationClass = processor.getSupportedAnnotationClass();
+        nameSet.add(annotationClass.getSimpleName());
+        nameSet.add(annotationClass.getName());
+      }
+
+      registeredAnnotationNames = nameSet;
     }
   }
 
@@ -133,41 +142,22 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
     return Collections.emptyList();
   }
 
-  private boolean checkImportSection(@NotNull PsiClass psiClass) {
-    if (psiClass instanceof PsiJavaFile) {
-      PsiJavaFile psiFile = (PsiJavaFile) psiClass.getContainingFile();
-
-      PsiImportList psiImportList = psiFile.getImportList();
-      if (null != psiImportList) {
-        for (PsiImportStatementBase psiImportStatementBase : psiImportList.getAllImportStatements()) {
-          PsiJavaCodeReferenceElement importReference = psiImportStatementBase.getImportReference();
-          String qualifiedName = StringUtil.notNullize(null == importReference ? "" : importReference.getQualifiedName());
-          if (qualifiedName.startsWith(LOMBOK_PREFIX_MARKER)) {
-            return true;
-          }
-        }
-        return false;
-      }
-    }
-    return true;
-  }
-
   private boolean verifyLombokPresent(@NotNull PsiClass psiClass) {
     if (isExtensible(psiClass)) {
       return true;
     }
-    if (checkAnnotations(psiClass)) {
+    if (PsiAnnotationUtil.checkAnnotationsSimpleNameExistsIn(psiClass, registeredAnnotationNames)) {
       return true;
     }
     Collection<PsiField> psiFields = PsiClassUtil.collectClassFieldsIntern(psiClass);
     for (PsiField psiField : psiFields) {
-      if (checkAnnotations(psiField)) {
+      if (PsiAnnotationUtil.checkAnnotationsSimpleNameExistsIn(psiField, registeredAnnotationNames)) {
         return true;
       }
     }
     Collection<PsiMethod> psiMethods = PsiClassUtil.collectClassMethodsIntern(psiClass);
     for (PsiMethod psiMethod : psiMethods) {
-      if (checkAnnotations(psiMethod)) {
+      if (PsiAnnotationUtil.checkAnnotationsSimpleNameExistsIn(psiMethod, registeredAnnotationNames)) {
         return true;
       }
     }
@@ -175,34 +165,4 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
     return false;
   }
 
-  private boolean checkAnnotations(@NotNull PsiModifierListOwner modifierListOwner) {
-    PsiModifierList modifierList = modifierListOwner.getModifierList();
-    if (null != modifierList) {
-      for (PsiAnnotation psiAnnotation : modifierList.getAnnotations()) {
-        String qualifiedName = StringUtil.notNullize(psiAnnotation.getQualifiedName());
-        if (qualifiedName.startsWith(LOMBOK_PREFIX_MARKER)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  // draft --SS (get config keys)
-  private void readAnnotationConfiguration(Project project) {
-		ProcessorConfigProfile defaultProfile = new ProcessorConfigProfileImpl("");
-		List<ProcessorConfigProfile> moduleProfiles = new ArrayList<>();
-		final CompilerConfigurationImpl config = (CompilerConfigurationImpl) CompilerConfiguration.getInstance(project);
-
-	// copy profiles
-		defaultProfile.initFrom(config.getDefaultProcessorProfile());
-		for (ProcessorConfigProfile profile : config.getModuleProcessorProfiles()) {
-			ProcessorConfigProfile copy = new ProcessorConfigProfileImpl("");
-			copy.initFrom(profile);
-			moduleProfiles.add(copy);
-		}
-
-    String getterNoIsPrefix = defaultProfile.getOption(DefaultSettings.GETTER_NO_IS_PREFIX);
-    ProjectSettings.lombokGetterNoIsPrefix = getterNoIsPrefix != null;
-  }
 }

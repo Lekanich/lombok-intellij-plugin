@@ -18,6 +18,8 @@ import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.search.searches.ReferencesSearch;
 import com.intellij.psi.util.PsiTreeUtil;
+import de.plushnikov.intellij.plugin.handler.LazyGetterHandler;
+import de.plushnikov.intellij.plugin.handler.SneakyThrowsExceptionHandler;
 import com.intellij.util.Query;
 import com.siyeh.ig.psiutils.ClassUtils;
 import de.plushnikov.intellij.plugin.handler.SneakyTrowsExceptionHandler;
@@ -26,6 +28,9 @@ import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.siyeh.ig.psiutils.ClassUtils.getContainingClass;
 import static de.plushnikov.intellij.plugin.extension.LombokCompletionContributor.LombokElementFilter.getCallType;
@@ -40,6 +45,8 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
   private static final String UNHANDLED_EXCEPTIONS_PREFIX_TEXT = "Unhandled exceptions:";
   private static final String UNHANDLED_AUTOCLOSABLE_EXCEPTIONS_PREFIX_TEXT = "Unhandled exception from auto-closeable resource:";
 
+  private static final Pattern UNINITIALIZED_MESSAGE = Pattern.compile("Variable '.+' might not have been initialized");
+
   @Override
   public boolean accept(@NotNull HighlightInfo highlightInfo, @Nullable PsiFile file) {
     if (file == null) return true;
@@ -50,18 +57,20 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
     if (HighlightSeverity.ERROR.equals(highlightInfo.getSeverity())) {
       final String description = StringUtil.notNullize(highlightInfo.getDescription());
 
-      if (HighlightInfoType.UNHANDLED_EXCEPTION.equals(highlightInfo.type) &&
-          (StringUtil.startsWith(description, UNHANDLED_EXCEPTION_PREFIX_TEXT) ||
-              StringUtil.startsWith(description, UNHANDLED_EXCEPTIONS_PREFIX_TEXT) ||
-              StringUtil.startsWith(description, UNHANDLED_AUTOCLOSABLE_EXCEPTIONS_PREFIX_TEXT))) {
+      // Handling SneakyThrows
+      if (HighlightInfoType.UNHANDLED_EXCEPTION.equals(highlightInfo.type) && unhandledException(description)) {
         final String unhandledExceptions = description.substring(description.indexOf(':') + 1).trim();
         final String[] exceptionFQNs = unhandledExceptions.split(",");
         if (exceptionFQNs.length > 0) {
           final PsiMethod psiMethod = PsiTreeUtil.getParentOfType(file.findElementAt(highlightInfo.getStartOffset()), PsiMethod.class);
           if (null != psiMethod) {
-            return !SneakyTrowsExceptionHandler.isExceptionHandled(psiMethod, exceptionFQNs);
+            return !SneakyThrowsExceptionHandler.isExceptionHandled(psiMethod, exceptionFQNs);
           }
         }
+      }
+      // Handling LazyGetter
+      if (uninitializedField(description) && LazyGetterHandler.isLazyGetterHandled(highlightInfo, file)) {
+        return false;
       }
       if (HighlightInfoType.WRONG_REF.equals(highlightInfo.type)) {
         return isUnresolvedMethodExtensionPrimitive(highlightInfo, file) && isInaccessibleFieldDefaultsField(highlightInfo, file);
@@ -144,5 +153,16 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
       if (getType(method.getParameterList().getParameters()[0].getType(), method).isAssignableFrom(callType)) return false;                 // remove exception highlight
     }
     return true;
+  }
+
+  private boolean unhandledException(String description) {
+    return (StringUtil.startsWith(description, UNHANDLED_EXCEPTION_PREFIX_TEXT) ||
+        StringUtil.startsWith(description, UNHANDLED_EXCEPTIONS_PREFIX_TEXT) ||
+        StringUtil.startsWith(description, UNHANDLED_AUTOCLOSABLE_EXCEPTIONS_PREFIX_TEXT));
+  }
+
+  private boolean uninitializedField(String description) {
+    Matcher matcher = UNINITIALIZED_MESSAGE.matcher(description);
+    return matcher.matches();
   }
 }

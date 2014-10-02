@@ -1,9 +1,9 @@
 package de.plushnikov.delegate;
 
+import lombok.Delegate;
+
 import java.util.ArrayList;
 import java.util.Collection;
-
-import lombok.Delegate;
 
 public class DelegationExample {
     private interface SimpleCollection {
@@ -14,6 +14,11 @@ public class DelegationExample {
 
     @Delegate(types = SimpleCollection.class)
     private final Collection<String> collection = new ArrayList<String>();
+
+    public static void main(String[] args) {
+        DelegationExample example = new DelegationExample();
+        example.add("Hello World");
+    }
 }
 
 class ExcludesDelegateExample {

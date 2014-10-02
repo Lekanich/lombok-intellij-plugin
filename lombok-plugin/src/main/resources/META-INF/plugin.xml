@@ -5,7 +5,7 @@
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
   <version>1.0.26</version>
 
-  <idea-version since-build="133.00"/>
+  <idea-version since-build="138.00"/>
 
   <description><![CDATA[
     A plugin that adds first-class support for Project Lombok
@@ -40,6 +40,13 @@
 
     <daemon.highlightInfoFilter implementation="de.plushnikov.intellij.plugin.extension.LombokHighlightErrorFilter"/>
 
+    <fileTypeFactory implementation="de.plushnikov.intellij.plugin.language.LombokConfigFileTypeFactory"/>
+    <lang.parserDefinition language="Lombok.Config" implementationClass="de.plushnikov.intellij.plugin.language.LombokConfigParserDefinition"/>
+    <lang.syntaxHighlighterFactory key="Lombok.Config" implementationClass="de.plushnikov.intellij.plugin.language.LombokConfigSyntaxHighlighterFactory"/>
+    <colorSettingsPage implementation="de.plushnikov.intellij.plugin.language.LombokConfigColorSettingsPage"/>
+    <completion.contributor language="Lombok.Config" implementationClass="de.plushnikov.intellij.plugin.language.LombokConfigCompletionContributor"/>
+    <lang.commenter language="Lombok.Config" implementationClass="de.plushnikov.intellij.plugin.language.LombokConfigCommentor"/>
+
     <completion.contributor language="JAVA" id="lombokContributor" implementationClass="de.plushnikov.intellij.plugin.extension.LombokCompletionContributor"
                             order="last, before legacy, before default, before javaClassName, before javaLegacy"/>
     <completion.contributor language="JAVA" id="primitiveLombokContributor" implementationClass="de.plushnikov.intellij.plugin.extension.LombokPrimitiveCompletionContributor"
@@ -72,11 +79,13 @@
     <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.BuilderProcessor"/>
 
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.DelegateFieldProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.field.DelegateExperimentalFieldProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.GetterFieldProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.SetterFieldProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.WitherFieldProcessor"/>
 
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.DelegateMethodProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.method.DelegateExperimentalMethodProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderClassMethodProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderMethodProcessor"/>
 
@@ -253,10 +262,24 @@
 				<br>Added support FieldDefaults </br>
 				<br>Fixed FieldDefaults with keyword</br>
 			</li>
+			<li>0.8.8
+				<ol>
+				    <li>Fixed #52 : Invalid stub element type in index</li>
+				    <li>Fixed #54 : @Wither copies @Nullable annotation to generated method</li>
+				    <li>Fixed #62 : Intellij shows error on Lazy Getter</li>
+				    <li>Fixed #63 : Added support for @Tolerate (together with @Value, @Data)</li>
+				    <li>Fixed issue 109(on GoogleCode): Intellij freezes regularly when the lombok plugin is enabled</li>
+				    <li>Fixed issue 106(on GoogleCode): Static methods annotated with @Builder are not recognized</li>
+				    <li>Updated to lombok changes: canEqual (of @EqualsAndHashCode fame) should be protected instead of public.</li>
+				    <li>Basic autocompletion and highlighting for lombok.config files</li>
+				</ol>
+			</li>
 		<li>0.8.7
 				<ol>
 				    <li>Fixed issue 104(on GoogleCode):	Intellij reports unused field with @Getter and @Setter</li>
 				    <li>Fixed #50 : @SneakyThrows does not work for try-with-resource statements</li>
+				    <li>Fixed #51 : Delegate annotation moved to experimental</li>
+				    <li>Fixed #58 : NoSuchMethodError in IntelliJ 14 EAP</li>
 				</ol>
 			</li>
 		<li>0.8.6
