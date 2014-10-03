@@ -16,7 +16,6 @@ import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.impl.source.PsiExtensibleClass;
-import lombok.experimental.Tolerate;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -62,7 +61,7 @@ public class PsiClassUtil {
   @NotNull
   public static Collection<PsiMethod> collectClassMethodsIntern(@NotNull PsiClass psiClass) {
     if (psiClass instanceof PsiExtensibleClass) {
-      return ((PsiExtensibleClass) psiClass).getOwnMethods().stream().filter(method -> !PsiAnnotationUtil.isAnnotatedWith(method, Tolerate.class)).collect(Collectors.toList());
+      return ((PsiExtensibleClass) psiClass).getOwnMethods();
     } else {
       return Arrays.stream(psiClass.getChildren()).filter(child -> child instanceof PsiMethod).map(element->(PsiMethod)element).collect(Collectors.toList());
     }
