@@ -24,5 +24,10 @@
             <directory>${project.basedir}/lombok-plugin/src/main/java/</directory>
             <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>
+        <fileSet>
+            <outputDirectory>/</outputDirectory>
+            <directory>${project.basedir}/lombok-plugin/lombok-plugin/gen</directory>
+            <useDefaultExcludes>true</useDefaultExcludes>
+        </fileSet>
     </fileSets>
 </assembly>

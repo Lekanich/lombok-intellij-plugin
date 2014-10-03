@@ -50,6 +50,7 @@ public class PsiFieldUtil {
     PsiAnnotation annotation = findAnnotation(containingClass, FieldDefaults.class);
     if (annotation == null) return false;
 
-    return getAnnotationValue(annotation, "makeFinal", Boolean.class);
+    Boolean makeFinal = getAnnotationValue(annotation, "makeFinal", Boolean.class);
+    return makeFinal != null ? makeFinal : psiField.hasModifierProperty(PsiModifier.FINAL);       // if couldn't find annotation value get really final modifier of field
   }
 }

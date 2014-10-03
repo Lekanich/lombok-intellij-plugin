@@ -19,8 +19,6 @@ import de.plushnikov.intellij.plugin.settings.ProjectSettings;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.jps.model.java.compiler.ProcessorConfigProfile;
-import org.jetbrains.jps.model.java.impl.compiler.ProcessorConfigProfileImpl;
 
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;

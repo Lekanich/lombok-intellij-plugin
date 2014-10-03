@@ -5,111 +5,127 @@
   <parent>
     <groupId>lombok-intellij-plugin</groupId>
     <artifactId>lombok-intellij-plugin-parent</artifactId>
-    <version>1.0.26</version>
+    <version>1.0.27</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>lombok-intellij-plugin</artifactId>
 
   <properties>
-		<pack.name>lombok-plugin</pack.name>
+    <pack.name>lombok-plugin</pack.name>
     <libs.path>/synced/idea.libs</libs.path>
     <intellij.sdk.name>135.909</intellij.sdk.name>
   </properties>
 
-    <dependencies>
-      <dependency>
-        <groupId>org.projectlombok</groupId>
-        <artifactId>lombok</artifactId>
-      </dependency>
-      <dependency>
-        <groupId>com.github.peichhorn</groupId>
-        <artifactId>lombok-pg</artifactId>
-      </dependency>
-      <dependency>
-        <groupId>com.github.peichhorn</groupId>
-        <artifactId>lombok-pg</artifactId>
-      </dependency>
+  <dependencies>
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.peichhorn</groupId>
+      <artifactId>lombok-pg</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.github.peichhorn</groupId>
+      <artifactId>lombok-pg</artifactId>
+    </dependency>
 
-      <dependency>
-        <groupId>org.apache.velocity</groupId>
-        <artifactId>velocity</artifactId>
-        <version>1.7</version>
-      </dependency>
-      <dependency>
-        <groupId>net.sf.trove4j</groupId>
-        <artifactId>trove4j</artifactId>
-        <version>2.0.2</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>14.0</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>14.0</version>
-      </dependency>
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.11</version>
-      </dependency>
-      <dependency>
-        <groupId>log4j</groupId>
-        <artifactId>log4j</artifactId>
-        <version>1.2.17</version>
-      </dependency>
+    <dependency>
+      <groupId>org.apache.velocity</groupId>
+      <artifactId>velocity</artifactId>
+      <version>1.7</version>
+    </dependency>
+    <dependency>
+      <groupId>net.sf.trove4j</groupId>
+      <artifactId>trove4j</artifactId>
+      <version>2.0.2</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>14.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>14.0</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
+    </dependency>
 
-      <dependency>
-        <groupId>com.intellij</groupId>
-        <artifactId>openapi</artifactId>
-        <scope>system</scope>
-        <version>${intellij.sdk.name}</version>
-        <systemPath>${libs.path}/openapi.jar</systemPath>
-      </dependency>
-      <dependency>
-        <groupId>com.intellij</groupId>
-        <artifactId>idea-extensions</artifactId>
-        <version>${intellij.sdk.name}</version>
-        <scope>system</scope>
-        <systemPath>${libs.path}/extensions.jar</systemPath>
-      </dependency>
-      <dependency>
-        <groupId>com.intellij</groupId>
-        <artifactId>idea-util</artifactId>
-        <version>${intellij.sdk.name}</version>
-        <scope>system</scope>
-        <systemPath>${libs.path}/util.jar</systemPath>
-      </dependency>
-      <dependency>
-        <groupId>com.intellij</groupId>
-        <artifactId>idea-annotations</artifactId>
-        <version>${intellij.sdk.name}</version>
-        <scope>system</scope>
-        <systemPath>${libs.path}/annotations.jar</systemPath>
-      </dependency>
-      <dependency>
-        <groupId>com.intellij</groupId>
-        <artifactId>idea</artifactId>
-        <version>${intellij.sdk.name}</version>
-        <scope>system</scope>
-        <systemPath>${libs.path}/idea.jar</systemPath>
-      </dependency>
-      <dependency>
-        <groupId>com.intellij</groupId>
-        <artifactId>forms_rt</artifactId>
-        <version>${intellij.sdk.name}</version>
-        <scope>system</scope>
-        <systemPath>${libs.path}/forms_rt.jar</systemPath>
-      </dependency>
-    </dependencies>
+    <dependency>
+      <groupId>com.intellij</groupId>
+      <artifactId>openapi</artifactId>
+      <scope>system</scope>
+      <version>${intellij.sdk.name}</version>
+      <systemPath>${libs.path}/openapi.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>com.intellij</groupId>
+      <artifactId>idea-extensions</artifactId>
+      <version>${intellij.sdk.name}</version>
+      <scope>system</scope>
+      <systemPath>${libs.path}/extensions.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>com.intellij</groupId>
+      <artifactId>idea-util</artifactId>
+      <version>${intellij.sdk.name}</version>
+      <scope>system</scope>
+      <systemPath>${libs.path}/util.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>com.intellij</groupId>
+      <artifactId>idea-annotations</artifactId>
+      <version>${intellij.sdk.name}</version>
+      <scope>system</scope>
+      <systemPath>${libs.path}/annotations.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>com.intellij</groupId>
+      <artifactId>idea</artifactId>
+      <version>${intellij.sdk.name}</version>
+      <scope>system</scope>
+      <systemPath>${libs.path}/idea.jar</systemPath>
+    </dependency>
+    <dependency>
+      <groupId>com.intellij</groupId>
+      <artifactId>forms_rt</artifactId>
+      <version>${intellij.sdk.name}</version>
+      <scope>system</scope>
+      <systemPath>${libs.path}/forms_rt.jar</systemPath>
+    </dependency>
+  </dependencies>
 
   <build>
     <finalName>${pack.name}</finalName>
     <plugins>
       <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.8</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>src/main</source>
+                <source>gen/</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
 
       <plugin>
@@ -128,14 +144,12 @@
               <outputDirectory>${basedir}/target</outputDirectory>
               <resources>
                 <resource>
-                  <directory>${basedir}/resource</directory>
+                  <directory>${basedir}/src/main/resources</directory>
                   <include>lombokUpdate.xml</include>
-                </resource>
-                <resource>
-                  <directory>${basedir}/resource</directory>
                   <include>makeUpdateXml.sh</include>
                 </resource>
               </resources>
+
             </configuration>
           </execution>
         </executions>
