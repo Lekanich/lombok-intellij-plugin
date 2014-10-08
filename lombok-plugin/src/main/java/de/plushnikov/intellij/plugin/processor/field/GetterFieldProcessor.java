@@ -16,6 +16,7 @@ import de.plushnikov.intellij.plugin.thirdparty.LombokUtils;
 import de.plushnikov.intellij.plugin.util.LombokProcessorUtil;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
+import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -60,7 +61,7 @@ public class GetterFieldProcessor extends AbstractFieldProcessor {
     }
 
     if (result && lazy) {
-      if (!psiField.hasModifierProperty(PsiModifier.FINAL) || !psiField.hasModifierProperty(PsiModifier.PRIVATE)) {
+      if (!PsiFieldUtil.isFinal(psiField) || !psiField.hasModifierProperty(PsiModifier.PRIVATE)) {
         builder.addError("'lazy' requires the field to be private and final",
             PsiQuickFixFactory.createModifierListFix(psiField, PsiModifier.PRIVATE, true, false),
             PsiQuickFixFactory.createModifierListFix(psiField, PsiModifier.FINAL, true, false));

@@ -3,7 +3,7 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.0.27</version>
+  <version>1.0.28</version>
 
   <idea-version since-build="133.00"/>
 
@@ -189,6 +189,8 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.0.28</li>
+		    <br> correct handles FieldDefautls final fields (Constructor and in other processor change hasModifierProperty(PsiModifier.FINAL) to isFinal(PsiField))
 		<li>1.0.27</li>
 		    <br> Merge with lombok plugin
 		<li>1.0.26</li>

@@ -19,6 +19,7 @@ import de.plushnikov.intellij.plugin.thirdparty.LombokUtils;
 import de.plushnikov.intellij.plugin.util.LombokProcessorUtil;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
+import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
@@ -195,7 +196,7 @@ public class WitherFieldProcessor extends AbstractFieldProcessor {
         if (classField.hasModifierProperty(PsiModifier.STATIC)) {
           continue;
         }
-        if (classField.hasModifierProperty(PsiModifier.FINAL) && null != classField.getInitializer()) {
+        if (PsiFieldUtil.isFinal(classField) && null != classField.getInitializer()) {
           continue;
         }
 

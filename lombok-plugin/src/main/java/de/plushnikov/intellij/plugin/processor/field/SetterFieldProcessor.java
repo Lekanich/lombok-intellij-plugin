@@ -71,7 +71,7 @@ public class SetterFieldProcessor extends AbstractFieldProcessor {
     boolean result = true;
     if (PsiFieldUtil.isFinal(psiField)) {
       String message = String.format("'@%s' on final field is not allowed", psiAnnotation.getQualifiedName());
-      if (psiField.hasModifierProperty(PsiModifier.FINAL)) {
+      if (PsiFieldUtil.isFinal(psiField)) {
         builder.addError(message, PsiQuickFixFactory.createModifierListFix(psiField, PsiModifier.FINAL, false, false));
       } else {
         builder.addError(message);

@@ -27,6 +27,7 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiMethodCallExpression;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiModifierList;
+import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiSuperExpression;
@@ -35,6 +36,7 @@ import com.intellij.psi.impl.source.resolve.JavaResolveUtil;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 import com.intellij.psi.util.TypeConversionUtil;
+import de.plushnikov.intellij.plugin.psi.LombokLightMethod;
 import de.plushnikov.intellij.plugin.psi.LombokLightModifierList;
 import de.plushnikov.intellij.plugin.util.LombokProcessorUtil;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
@@ -68,9 +70,9 @@ final public class FieldDefaultsUtil {
   private static final String MESSAGE3_FIX = "Initialize in variable '%s'...";
 
   final private static class FieldRef {
-
     private PsiField psiField;
     private PsiReference reference;
+
     public FieldRef(PsiField field, PsiReference reference) {
       this.psiField = field;
       this.reference = reference;
@@ -163,7 +165,7 @@ final public class FieldDefaultsUtil {
     PsiField[] fields = psiClass.getFields();
 
   // collect inited fields
-  // field was initialized (hasInitializer() sometime return false when must - true)  --SS
+  // field was initialized or it errors default by IDEA API (hasInitializer() sometime return false when must - true)  --SS
     Set<PsiField> alreadyInitedFields = Arrays.stream(fields).filter(field -> field.getInitializer() != null || field.hasModifierProperty(PsiModifier.FINAL)).collect(Collectors.toSet());
 
   // collect inited fields from class initializers and find some error references into them
@@ -196,7 +198,7 @@ final public class FieldDefaultsUtil {
           }
         }
 
-        handleFieldInitializedInConstructor(psiClass, errorFieldRef, alreadyInitedFields, constructors.get(i), initedFields);
+        handleFieldInitializedInConstructor(psiClass, errorFieldRef, fields, alreadyInitedFields, constructors.get(i), initedFields);
 
       // remove constructor from list and offset iterator
         initInConstructors.put(constructors.get(i), initedFields);
@@ -212,16 +214,16 @@ final public class FieldDefaultsUtil {
     }
 
   // add inited in constructors fields and remove initialized fields from error list
-    constructorInitializedLoop:
-    for (int i = 0; i < errorFields.size(); i++) {
-      for (PsiMethod constructor : initInConstructors.keySet()) {
-        if (!initInConstructors.get(constructor).contains(errorFields.get(i))) continue constructorInitializedLoop;
-      }
+    if (!initInConstructors.isEmpty()) {
+      constructorInitializedLoop:
+      for (int i = 0; i < errorFields.size(); i++) {
+        for (PsiMethod constructor : initInConstructors.keySet()) {
+          if (!initInConstructors.get(constructor).contains(errorFields.get(i))) continue constructorInitializedLoop;
+        }
 
-    // - field initialized in all constructors, fix mistake
-      alreadyInitedFields.add(errorFields.get(i));
-      errorFields.remove(i);
-      i--;
+      // - field initialized in all constructors, fix mistake
+        alreadyInitedFields.add(errorFields.remove(i--));
+      }
     }
 
   // find error references in methods;
@@ -251,10 +253,18 @@ final public class FieldDefaultsUtil {
     });
   }
 
-  private static void handleFieldInitializedInConstructor(@NotNull PsiClass psiClass, @NotNull Set<FieldRef> errorFieldRef,
+  private static void handleFieldInitializedInConstructor(@NotNull PsiClass psiClass, @NotNull Set<FieldRef> errorFieldRef, @NotNull PsiField[] allClassFields,
                                                           @NotNull Set<PsiField> alreadyInitedFields, @NotNull PsiMethod constructor, @NotNull Set<PsiField> initedFields) {
   // check the fields of the parent
-    getFields(constructor).stream().filter(fieldRef -> isFinalByFieldDefault(fieldRef.getPsiField())).forEach(fieldRef -> {
+    final List<FieldRef> fieldRefs = new ArrayList<>();
+    if (constructor instanceof LombokLightMethod) {
+      for (PsiParameter parameter : constructor.getParameterList().getParameters()) {
+        Arrays.stream(allClassFields).filter(field -> field.getName().equals(parameter.getName())).findAny().ifPresent(field -> fieldRefs.add(new FieldRef(field, null)));
+      }
+    } else {
+      fieldRefs.addAll(getFields(constructor));
+    }
+    fieldRefs.stream().filter(fieldRef -> isFinalByFieldDefault(fieldRef.getPsiField())).forEach(fieldRef -> {
       PsiClass fieldContainingClass = fieldRef.getPsiField().getContainingClass();
 
       if (isNeededInit(fieldContainingClass, psiClass)) {

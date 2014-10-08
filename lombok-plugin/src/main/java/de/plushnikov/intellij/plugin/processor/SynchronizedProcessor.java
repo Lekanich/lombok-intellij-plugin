@@ -16,6 +16,7 @@ import de.plushnikov.intellij.plugin.problem.LombokProblem;
 import de.plushnikov.intellij.plugin.problem.ProblemNewBuilder;
 import de.plushnikov.intellij.plugin.quickfix.PsiQuickFixFactory;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
+import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import lombok.Synchronized;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,7 +60,7 @@ public class SynchronizedProcessor extends AbstractProcessor {
         if (null != containingClass) {
           final PsiField lockField = containingClass.findFieldByName(lockFieldName, true);
           if (null != lockField) {
-            if (!lockField.hasModifierProperty(PsiModifier.FINAL)) {
+            if (!PsiFieldUtil.isFinal(lockField)) {
               problemNewBuilder.addWarning(String.format("Synchronization on a non-final field %s.", lockFieldName),
                   PsiQuickFixFactory.createModifierListFix(lockField, PsiModifier.FINAL, true, false));
             }

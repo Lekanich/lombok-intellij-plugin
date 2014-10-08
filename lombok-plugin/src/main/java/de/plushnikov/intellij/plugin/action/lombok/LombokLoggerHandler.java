@@ -13,6 +13,7 @@ import de.plushnikov.intellij.plugin.processor.clazz.log.Log4jProcessor;
 import de.plushnikov.intellij.plugin.processor.clazz.log.LogProcessor;
 import de.plushnikov.intellij.plugin.processor.clazz.log.Slf4jProcessor;
 import de.plushnikov.intellij.plugin.processor.clazz.log.XSlf4jProcessor;
+import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
@@ -60,7 +61,7 @@ public class LombokLoggerHandler extends BaseLombokHandler {
   private boolean isValidLoggerField(@NotNull PsiField psiField) {
     boolean isPrivate = psiField.hasModifierProperty(PsiModifier.PRIVATE);
     boolean isStatic = psiField.hasModifierProperty(PsiModifier.STATIC);
-    boolean isFinal = psiField.hasModifierProperty(PsiModifier.FINAL);
+    boolean isFinal = PsiFieldUtil.isFinal(psiField);
     boolean isProperlyNamed = LOMBOK_LOGGER_NAME.equals(psiField.getName());
 
     return isPrivate & isStatic & isFinal & isProperlyNamed;
