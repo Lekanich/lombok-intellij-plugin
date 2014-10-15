@@ -50,7 +50,9 @@ final public class LombokUseScopeEnlarger extends UseScopeEnlarger {
         return element.getContainingFile();
       }
     };
-    fieldWithLombokAccess.withModifier(convertAccessLevelToJavaString(getAnnotationValue(annotation, "level", String.class)));
+    String level = getAnnotationValue(annotation, "level", String.class);
+    String accessLevelToJavaString = convertAccessLevelToJavaString(level);
+    if (accessLevelToJavaString != null) fieldWithLombokAccess.withModifier(accessLevelToJavaString);
     fieldWithLombokAccess.setContainingClass((field.getContainingClass()));
     if (field.hasModifierProperty(PsiModifier.STATIC)) fieldWithLombokAccess.withModifier(PsiModifier.STATIC);            // todo I think this doesn't need
 

@@ -16,7 +16,6 @@ import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.util.PsiTreeUtil;
 import de.plushnikov.intellij.plugin.extension.LombokProcessorExtensionPoint;
-import de.plushnikov.intellij.plugin.handler.FieldDefaultsUtil;
 import de.plushnikov.intellij.plugin.problem.LombokProblem;
 import de.plushnikov.intellij.plugin.processor.Processor;
 import de.plushnikov.intellij.plugin.psi.LombokLightMethodBuilder;
@@ -132,12 +131,6 @@ public class LombokInspection extends BaseJavaLocalInspectionTool {
       @Override
       public void visitReferenceExpression(PsiReferenceExpression expression) {
         // do nothing, just implement
-      }
-
-      @Override
-      public void visitClass(PsiClass aClass) {
-        super.visitClass(aClass);
-        FieldDefaultsUtil.handleClass(aClass, holder);
       }
 
       @Override
