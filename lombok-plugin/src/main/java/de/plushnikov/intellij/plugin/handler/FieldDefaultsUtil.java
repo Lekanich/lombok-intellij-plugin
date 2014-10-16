@@ -407,4 +407,8 @@ final public class FieldDefaultsUtil {
     }
     return contextClass;
   }
+
+  private static boolean isFinal(@NotNull PsiField psiField) {
+    return psiField.hasModifierProperty(PsiModifier.FINAL);
+  }
 }

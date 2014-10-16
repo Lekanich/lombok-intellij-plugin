@@ -3,7 +3,7 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.0.30</version>
+  <version>1.0.31</version>
 
   <idea-version since-build="133.00"/>
 
@@ -190,6 +190,8 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.0.31</li>
+		    <br> remove speed validate in lombok
 		<li>1.0.29</li>
 		    <br> rewrite error highlights for FieldDefaults(makeFinal = true)
 		<li>1.0.28</li>

@@ -141,26 +141,27 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
   }
 
   private boolean verifyLombokPresent(@NotNull PsiClass psiClass) {
-    if (isExtensible(psiClass)) {
-      return true;
-    }
-    if (PsiAnnotationUtil.checkAnnotationsSimpleNameExistsIn(psiClass, registeredAnnotationNames)) {
-      return true;
-    }
-    Collection<PsiField> psiFields = PsiClassUtil.collectClassFieldsIntern(psiClass);
-    for (PsiField psiField : psiFields) {
-      if (PsiAnnotationUtil.checkAnnotationsSimpleNameExistsIn(psiField, registeredAnnotationNames)) {
-        return true;
-      }
-    }
-    Collection<PsiMethod> psiMethods = PsiClassUtil.collectClassMethodsIntern(psiClass);
-    for (PsiMethod psiMethod : psiMethods) {
-      if (PsiAnnotationUtil.checkAnnotationsSimpleNameExistsIn(psiMethod, registeredAnnotationNames)) {
-        return true;
-      }
-    }
-
-    return false;
+    return true;
+//    if (PsiAnnotationUtil.checkAnnotationsSimpleNameExistsIn(psiClass, registeredAnnotationNames)) {
+//      return true;
+//    }
+//    Collection<PsiField> psiFields = PsiClassUtil.collectClassFieldsIntern(psiClass);
+//    for (PsiField psiField : psiFields) {
+//      if (PsiAnnotationUtil.checkAnnotationsSimpleNameExistsIn(psiField, registeredAnnotationNames)) {
+//        return true;
+//      }
+//    }
+//    Collection<PsiMethod> psiMethods = PsiClassUtil.collectClassMethodsIntern(psiClass);
+//    for (PsiMethod psiMethod : psiMethods) {
+//      if (PsiAnnotationUtil.checkAnnotationsSimpleNameExistsIn(psiMethod, registeredAnnotationNames)) {
+//        return true;
+//      }
+//    }
+//    if (isExtensible(psiClass)) {
+//      return true;
+//    }
+//
+//    return false;
   }
 
 }

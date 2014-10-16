@@ -18,6 +18,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiIdentifier;
 import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiKeyword;
+import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiVariable;
 import com.intellij.psi.controlFlow.ControlFlowUtil;
@@ -55,6 +56,7 @@ final public class LombokHighlightVisitor extends JavaElementVisitor implements 
 
   @Override
   public boolean analyze(@NotNull PsiFile file, boolean updateWholeFile, @NotNull HighlightInfoHolder holder, @NotNull Runnable action) {
+    boolean success = true;
     this.myFile = file;
     this.myHolder = CHECK_ELEMENT_LEVEL ? new CheckLevelHighlightInfoHolder(file, holder) : holder;
     try {
@@ -66,7 +68,7 @@ final public class LombokHighlightVisitor extends JavaElementVisitor implements 
       myFile = null;
       myHolder = null;
     }
-    return true;
+    return success;
   }
 
   @Override
@@ -82,6 +84,7 @@ final public class LombokHighlightVisitor extends JavaElementVisitor implements 
 
   @Override
   public void visitField(PsiField field) {
+    if (field.hasModifierProperty(PsiModifier.FINAL)) return;
     super.visitField(field);
     myHolder.add(FieldDefaultsUtil.checkFinalFieldInitialized(field));
   }
@@ -98,6 +101,7 @@ final public class LombokHighlightVisitor extends JavaElementVisitor implements 
       return;
     }
     PsiElement resolved = result.getElement();
+
     if (resolved instanceof PsiField && FieldDefaultsUtil.isFinalByFieldDefault((PsiField) resolved) && !((PsiField) resolved).hasInitializer()) {
       if (!myHolder.hasErrorResults()) {
         try {
@@ -117,7 +121,7 @@ final public class LombokHighlightVisitor extends JavaElementVisitor implements 
   public void visitExpression(PsiExpression expression) {
     ProgressManager.checkCanceled(); // visitLiteralExpression is invoked very often in array initializers
 
-    super.visitExpression(expression);
+//    super.visitExpression(expression);
     if (!myHolder.hasErrorResults()) myHolder.add(FieldDefaultsUtil.checkCannotWriteToFinal(expression, myFile));
   }
 
