@@ -17,6 +17,7 @@ import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiIdentifier;
 import com.intellij.psi.PsiJavaCodeReferenceElement;
+import com.intellij.psi.PsiJavaFile;
 import com.intellij.psi.PsiKeyword;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiReferenceExpression;
@@ -51,12 +52,11 @@ final public class LombokHighlightVisitor extends JavaElementVisitor implements 
 
   @Override
   public boolean suitableForFile(@NotNull PsiFile file) {
-    return !InjectedLanguageManager.getInstance(file.getProject()).isInjectedFragment(file);
+    return !InjectedLanguageManager.getInstance(file.getProject()).isInjectedFragment(file) && file instanceof PsiJavaFile;
   }
 
   @Override
   public boolean analyze(@NotNull PsiFile file, boolean updateWholeFile, @NotNull HighlightInfoHolder holder, @NotNull Runnable action) {
-    boolean success = true;
     this.myFile = file;
     this.myHolder = CHECK_ELEMENT_LEVEL ? new CheckLevelHighlightInfoHolder(file, holder) : holder;
     try {
@@ -68,7 +68,7 @@ final public class LombokHighlightVisitor extends JavaElementVisitor implements 
       myFile = null;
       myHolder = null;
     }
-    return success;
+    return true;
   }
 
   @Override
@@ -147,7 +147,7 @@ final public class LombokHighlightVisitor extends JavaElementVisitor implements 
     return new LombokHighlightVisitor();
   }
 
-  @Override public int order() { return 10; }
+  @Override public int order() { return 1; }
 
   @NotNull
   private JavaResolveResult[] resolveOptimised(@NotNull PsiReferenceExpression expression) {
