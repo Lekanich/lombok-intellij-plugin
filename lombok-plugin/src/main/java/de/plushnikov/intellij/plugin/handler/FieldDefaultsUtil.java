@@ -13,6 +13,7 @@ import com.intellij.codeInsight.intention.QuickFixFactory;
 import com.intellij.openapi.project.IndexNotReadyException;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.pom.java.LanguageLevel;
+import com.intellij.psi.ImplicitVariable;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAssignmentExpression;
@@ -190,7 +191,7 @@ final public class FieldDefaultsUtil {
     }
     final PsiElement resolved = reference == null ? null : reference.resolve();
     PsiVariable variable = resolved instanceof PsiVariable ? (PsiVariable)resolved : null;
-    if (!(variable instanceof PsiField) || !isFinalByFieldDefault((PsiField) variable)) return null;
+    if (variable == null || !isFinalByFieldDefault(variable)) return null;
     final boolean canWrite = canWriteToFinal(variable, expression, reference, containingFile) && checkWriteToFinalInsideLambda(variable, reference) == null;
     if (readBeforeWrite || !canWrite) {
       final String name = variable.getName();
@@ -270,7 +271,7 @@ final public class FieldDefaultsUtil {
   @Nullable
   public static HighlightInfo checkVariableInitializedBeforeUsage(PsiReferenceExpression expression, PsiVariable variable,
                                                                   Map<PsiElement, Collection<PsiReferenceExpression>> uninitializedVarProblems, @NotNull PsiFile containingFile) {
-    if (!(variable instanceof PsiField)) return null;
+    if (variable instanceof ImplicitVariable) return null;
     if (!PsiUtil.isAccessedForReading(expression)) return null;
 
     int startOffset = expression.getTextRange().getStartOffset();
@@ -278,7 +279,7 @@ final public class FieldDefaultsUtil {
 
     final PsiElement topBlock = FileTypeUtils.isInServerPageFile(scope) && scope != null ? scope : PsiUtil.getTopLevelEnclosingCodeBlock(expression, scope);
     // non final field already initialized with default value
-    if (!isFinalByFieldDefault((PsiField) variable)) return null;
+    if (!isFinalByFieldDefault(variable)) return null;
     // final field may be initialized in ctor or class initializer only
     // if we're inside non-ctr method, skip it
     if (PsiUtil.findEnclosingConstructorOrInitializer(expression) == null && HighlightUtil.findEnclosingFieldInitializer(expression) == null) return null;
@@ -349,7 +350,7 @@ final public class FieldDefaultsUtil {
 
 // end copy past with changes block todo
 
-  public static boolean isFinalByFieldDefault(@NotNull PsiField field) {
+  public static boolean isFinalByFieldDefault(@NotNull PsiVariable field) {
     return !field.hasModifierProperty(PsiModifier.FINAL) && PsiFieldUtil.isFinal(field);
   }
 

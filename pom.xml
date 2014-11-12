@@ -7,7 +7,14 @@
   <groupId>lombok-intellij-plugin</groupId>
   <artifactId>lombok-intellij-plugin-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.30</version>
+  <version>1.0.32</version>
+
+  <repositories>
+    <repository>
+      <id>hamsters-jenkins</id>
+      <url>http://repu.huyaru.com/</url>
+    </repository>
+  </repositories>
 
   <modules>
     <module>lombok-api</module>

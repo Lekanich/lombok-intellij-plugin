@@ -102,17 +102,19 @@ final public class LombokHighlightVisitor extends JavaElementVisitor implements 
     }
     PsiElement resolved = result.getElement();
 
-    if (resolved instanceof PsiField && FieldDefaultsUtil.isFinalByFieldDefault((PsiField) resolved) && !((PsiField) resolved).hasInitializer()) {
+    if (resolved instanceof PsiVariable && resolved.getContainingFile() == expression.getContainingFile()) {
       if (!myHolder.hasErrorResults()) {
         try {
           myHolder.add(FieldDefaultsUtil.checkVariableInitializedBeforeUsage(expression, (PsiVariable) resolved, myUninitializedVarProblems, myFile));
         } catch (IndexNotReadyException ignored) {}
       }
-      if (!myHolder.hasErrorResults()) {
-        myHolder.add(HighlightControlFlowUtil.checkFinalVariableMightAlreadyHaveBeenAssignedTo((PsiField) resolved, expression, myFinalVarProblems));
-      }
-      if (!myHolder.hasErrorResults()) {
-        myHolder.add(HighlightControlFlowUtil.checkFinalVariableInitializedInLoop(expression, resolved));
+      if (!((PsiVariable) resolved).hasInitializer() && FieldDefaultsUtil.isFinalByFieldDefault((PsiVariable) resolved)) {
+        if (!myHolder.hasErrorResults()) {
+          myHolder.add(HighlightControlFlowUtil.checkFinalVariableMightAlreadyHaveBeenAssignedTo((PsiVariable) resolved, expression, myFinalVarProblems));
+        }
+        if (!myHolder.hasErrorResults()) {
+          myHolder.add(HighlightControlFlowUtil.checkFinalVariableInitializedInLoop(expression, resolved));
+        }
       }
     }
   }
