@@ -190,6 +190,8 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.0.32</li>
+		    <br> added Final
 		<li>1.0.31</li>
 		    <br> remove speed validate in lombok
 		<li>1.0.29</li>
