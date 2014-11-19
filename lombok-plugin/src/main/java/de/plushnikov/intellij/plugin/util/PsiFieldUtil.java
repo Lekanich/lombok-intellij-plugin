@@ -14,6 +14,7 @@ import com.intellij.psi.PsiVariable;
 import com.intellij.psi.util.PsiTreeUtil;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.Final;
+import lombok.experimental.FinalArgs;
 import lombok.experimental.NonFinal;
 import org.jetbrains.annotations.NotNull;
 
@@ -58,6 +59,7 @@ public class PsiFieldUtil {
     PsiMethod method = PsiTreeUtil.getParentOfType(variable, PsiMethod.class);
     if (method != null && (parent instanceof PsiParameterList || parent instanceof PsiDeclarationStatement)
         && isAnnotatedWith(method, Final.class) && !(parent.getParent() instanceof PsiLambdaExpression)) return true;
+    if (method != null && parent instanceof PsiParameterList && isAnnotatedWith(method, FinalArgs.class) && !(parent.getParent() instanceof PsiLambdaExpression)) return true;
 
     if (!(variable instanceof PsiField)) return false;
 
