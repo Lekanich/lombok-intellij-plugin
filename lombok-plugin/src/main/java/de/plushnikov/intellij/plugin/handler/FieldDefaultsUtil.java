@@ -10,10 +10,8 @@ import com.intellij.codeInsight.daemon.impl.analysis.HighlightUtil;
 import com.intellij.codeInsight.daemon.impl.analysis.JavaHighlightUtil;
 import com.intellij.codeInsight.daemon.impl.quickfix.QuickFixAction;
 import com.intellij.codeInsight.intention.QuickFixFactory;
-import com.intellij.openapi.project.IndexNotReadyException;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.pom.java.LanguageLevel;
-import com.intellij.psi.ImplicitVariable;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiAssignmentExpression;
@@ -46,7 +44,6 @@ import com.intellij.psi.controlFlow.ControlFlowUtil;
 import com.intellij.psi.controlFlow.LocalsOrMyInstanceFieldsControlFlowPolicy;
 import com.intellij.psi.impl.source.resolve.JavaResolveUtil;
 import com.intellij.psi.tree.IElementType;
-import com.intellij.psi.util.FileTypeUtils;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 import de.plushnikov.intellij.plugin.psi.LombokLightModifierList;
@@ -59,7 +56,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -271,73 +267,8 @@ final public class FieldDefaultsUtil {
   @Nullable
   public static HighlightInfo checkVariableInitializedBeforeUsage(PsiReferenceExpression expression, PsiVariable variable,
                                                                   Map<PsiElement, Collection<PsiReferenceExpression>> uninitializedVarProblems, @NotNull PsiFile containingFile) {
-    if (variable instanceof ImplicitVariable) return null;
-    if (!PsiUtil.isAccessedForReading(expression)) return null;
-
-    int startOffset = expression.getTextRange().getStartOffset();
-    PsiElement scope = variable.getContainingFile();
-
-    final PsiElement topBlock = FileTypeUtils.isInServerPageFile(scope) && scope != null ? scope : PsiUtil.getTopLevelEnclosingCodeBlock(expression, scope);
-    // non final field already initialized with default value
     if (!isFinalByFieldDefault(variable)) return null;
-    // final field may be initialized in ctor or class initializer only
-    // if we're inside non-ctr method, skip it
-    if (PsiUtil.findEnclosingConstructorOrInitializer(expression) == null && HighlightUtil.findEnclosingFieldInitializer(expression) == null) return null;
-    if (topBlock == null) return null;
-
-    final PsiElement parent = topBlock.getParent();
-    // access to final fields from inner classes always allowed
-    if (inInnerClass(expression, ((PsiField) variable).getContainingClass(), containingFile)) return null;
-
-    if (!(parent instanceof PsiMethod) && (parent instanceof PsiClassInitializer)) {
-      // field reference outside code block
-      // check variable initialized before its usage
-      final PsiField field = (PsiField) variable;
-
-      PsiClass aClass = field.getContainingClass();
-      if (aClass == null || isFieldInitializedInOtherFieldInitializer(aClass, field, field.hasModifierProperty(PsiModifier.STATIC))) return null;
-      final PsiField anotherField = PsiTreeUtil.getTopmostParentOfType(expression, PsiField.class);
-
-      if (anotherField != null && anotherField.getContainingClass() == aClass && !field.hasModifierProperty(PsiModifier.STATIC)) startOffset = 0;
-      // initializers will be checked later
-      final PsiMethod[] constructors = aClass.getConstructors();
-      for (PsiMethod constructor : constructors) {
-        // variable must be initialized before its usage
-        if (startOffset < constructor.getTextRange().getStartOffset()) continue;
-        if (constructor.getBody() != null && variableDefinitelyAssignedIn(variable, constructor.getBody())) return null;
-        // as a last chance, field may be initialized in this() call
-        final List<PsiMethod> redirectedConstructors = JavaHighlightUtil.getChainedConstructors(constructor);
-        for (int j = 0; redirectedConstructors != null && j < redirectedConstructors.size(); j++) {
-          PsiMethod redirectedConstructor = redirectedConstructors.get(j);
-          // variable must be initialized before its usage
-          if (startOffset < redirectedConstructor.getTextRange().getStartOffset()) continue;
-          if (redirectedConstructor.getBody() != null && variableDefinitelyAssignedIn(variable, redirectedConstructor.getBody())) return null;
-        }
-      }
-    }
-
-    Collection<PsiReferenceExpression> codeBlockProblems = uninitializedVarProblems.get(topBlock);
-    if (codeBlockProblems == null) {
-      try {
-        final ControlFlow controlFlow = getControlFlow(topBlock);
-        codeBlockProblems = ControlFlowUtil.getReadBeforeWriteLocals(controlFlow);
-      } catch (AnalysisCanceledException e) {
-        codeBlockProblems = Collections.emptyList();
-      } catch (IndexNotReadyException e) {
-        codeBlockProblems = Collections.emptyList();
-      }
-      uninitializedVarProblems.put(topBlock, codeBlockProblems);
-    }
-    if (codeBlockProblems.contains(expression)) {
-      final String name = expression.getElement().getText();
-      String description = JavaErrorMessages.message("variable.not.initialized", name);
-      HighlightInfo highlightInfo = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR).range(expression).descriptionAndTooltip(description).create();
-      QuickFixAction.registerQuickFixAction(highlightInfo, QUICK_FIX_FACTORY.createAddVariableInitializerFix(variable));
-      QuickFixAction.registerQuickFixAction(highlightInfo, QUICK_FIX_FACTORY.createModifierListFix(variable, PsiModifier.FINAL, false, false));
-      return highlightInfo;
-    }
-
-    return null;
+    return HighlightControlFlowUtil.checkVariableInitializedBeforeUsage(expression, variable, uninitializedVarProblems, containingFile);
   }
 
   private static boolean inInnerClass(PsiElement element, PsiClass containingClass, @NotNull PsiFile containingFile) {
