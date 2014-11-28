@@ -149,7 +149,7 @@ final public class LombokHighlightVisitor extends JavaElementVisitor implements 
     return new LombokHighlightVisitor();
   }
 
-  @Override public int order() { return 1; }
+  @Override public int order() { return 4; }
 
   @NotNull
   private JavaResolveResult[] resolveOptimised(@NotNull PsiReferenceExpression expression) {
