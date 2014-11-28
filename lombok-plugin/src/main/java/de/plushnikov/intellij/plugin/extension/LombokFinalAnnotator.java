@@ -6,6 +6,7 @@ import com.intellij.lang.annotation.Annotator;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
@@ -14,8 +15,8 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.IncorrectOperationException;
-import de.plushnikov.intellij.plugin.handler.FieldDefaultsUtil;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
+import lombok.experimental.FieldDefaults;
 import lombok.experimental.Final;
 import lombok.experimental.FinalArgs;
 import org.jetbrains.annotations.NotNull;
@@ -82,6 +83,9 @@ public class LombokFinalAnnotator implements Annotator {
   }
 
   public void handleGlobalVariable(@NotNull final PsiField psiField) {
-    if (!FieldDefaultsUtil.isFinalByFieldDefault(psiField)) holder.createWarningAnnotation(keyword, MESSAGE_3).registerFix(new RemoveFinalIntentionAction(keyword));
+    PsiClass containingClass = psiField.getContainingClass();
+    if (containingClass == null) return;
+
+    if (PsiAnnotationUtil.isAnnotatedWith(containingClass, FieldDefaults.class)) holder.createWarningAnnotation(keyword, MESSAGE_3).registerFix(new RemoveFinalIntentionAction(keyword));
   }
 }
