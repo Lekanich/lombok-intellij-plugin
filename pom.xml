@@ -7,7 +7,7 @@
   <groupId>lombok-intellij-plugin</groupId>
   <artifactId>lombok-intellij-plugin-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.0.35</version>
+  <version>1.0.36</version>
 
   <repositories>
     <repository>
