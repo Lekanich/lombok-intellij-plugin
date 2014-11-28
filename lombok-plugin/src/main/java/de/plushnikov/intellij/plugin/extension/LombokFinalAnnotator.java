@@ -86,6 +86,10 @@ public class LombokFinalAnnotator implements Annotator {
     PsiClass containingClass = psiField.getContainingClass();
     if (containingClass == null) return;
 
-    if (PsiAnnotationUtil.isAnnotatedWith(containingClass, FieldDefaults.class)) holder.createWarningAnnotation(keyword, MESSAGE_3).registerFix(new RemoveFinalIntentionAction(keyword));
+    PsiAnnotation annotation = PsiAnnotationUtil.findAnnotation(containingClass, FieldDefaults.class);
+    if (annotation == null) return;
+
+    Boolean makeFinal = PsiAnnotationUtil.getAnnotationValue(annotation, "makeFinal", Boolean.class);
+    if (makeFinal) holder.createWarningAnnotation(keyword, MESSAGE_3).registerFix(new RemoveFinalIntentionAction(keyword));
   }
 }
