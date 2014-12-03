@@ -55,6 +55,7 @@
     <highlightVisitor implementation="de.plushnikov.intellij.plugin.extension.LombokHighlightVisitor"/>
     <annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokErrorAnnotator"/>
     <annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokFinalAnnotator"/>
+		<annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokNonNullAnnotator"/>
   </extensions>
 
   <extensions defaultExtensionNs="lombok-plugin">
