@@ -27,6 +27,7 @@ import com.intellij.psi.impl.source.resolve.JavaResolveUtil;
 import com.intellij.psi.impl.source.tree.java.PsiReferenceExpressionImpl;
 import com.intellij.psi.util.PsiUtil;
 import de.plushnikov.intellij.plugin.handler.FieldDefaultsUtil;
+import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
 
@@ -108,7 +109,7 @@ final public class LombokHighlightVisitor extends JavaElementVisitor implements 
           myHolder.add(FieldDefaultsUtil.checkVariableInitializedBeforeUsage(expression, (PsiVariable) resolved, myUninitializedVarProblems, myFile));
         } catch (IndexNotReadyException ignored) {}
       }
-      if (!((PsiVariable) resolved).hasInitializer() && FieldDefaultsUtil.isFinalByFieldDefault((PsiVariable) resolved)) {
+      if (!((PsiVariable) resolved).hasInitializer() && PsiFieldUtil.isFinalByAnnotation((PsiVariable) resolved)) {
         if (!myHolder.hasErrorResults()) {
           myHolder.add(HighlightControlFlowUtil.checkFinalVariableMightAlreadyHaveBeenAssignedTo((PsiVariable) resolved, expression, myFinalVarProblems));
         }

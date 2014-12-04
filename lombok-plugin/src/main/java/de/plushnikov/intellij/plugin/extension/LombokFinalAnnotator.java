@@ -6,17 +6,16 @@ import com.intellij.lang.annotation.Annotator;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiKeyword;
 import com.intellij.psi.PsiMethod;
-import com.intellij.psi.PsiParameter;
+import com.intellij.psi.PsiVariable;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.IncorrectOperationException;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
-import lombok.experimental.FieldDefaults;
+import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import lombok.experimental.Final;
 import lombok.experimental.FinalArgs;
 import org.jetbrains.annotations.NotNull;
@@ -74,22 +73,14 @@ public class LombokFinalAnnotator implements Annotator {
 
     if (finalAnnotation != null && finalArgsAnnotation != null) holder.createWarningAnnotation(finalArgsAnnotation, MESSAGE_1).registerFix(new RemoveFinalIntentionAction(keyword));
 
-    if (finalArgsAnnotation != null && PsiTreeUtil.getParentOfType(keyword, PsiParameter.class) != null) {
-       holder.createWarningAnnotation(keyword, String.format(MESSAGE_2, finalArgsAnnotation.getQualifiedName())).registerFix(new RemoveFinalIntentionAction(keyword));
-    }
-    if (finalAnnotation != null) {
-      holder.createWarningAnnotation(keyword, String.format(MESSAGE_2, finalAnnotation.getQualifiedName())).registerFix(new RemoveFinalIntentionAction(keyword));
+    PsiVariable variable = PsiTreeUtil.getParentOfType(keyword, PsiVariable.class);
+    if (PsiFieldUtil.isFinalByAnnotation(variable)) {
+      if (finalArgsAnnotation != null) holder.createWarningAnnotation(keyword, String.format(MESSAGE_2, finalArgsAnnotation.getQualifiedName())).registerFix(new RemoveFinalIntentionAction(keyword));
+      if (finalAnnotation != null) holder.createWarningAnnotation(keyword, String.format(MESSAGE_2, finalAnnotation.getQualifiedName())).registerFix(new RemoveFinalIntentionAction(keyword));
     }
   }
 
   public void handleGlobalVariable(@NotNull final PsiField psiField) {
-    PsiClass containingClass = psiField.getContainingClass();
-    if (containingClass == null) return;
-
-    PsiAnnotation annotation = PsiAnnotationUtil.findAnnotation(containingClass, FieldDefaults.class);
-    if (annotation == null) return;
-
-    Boolean makeFinal = PsiAnnotationUtil.getAnnotationValue(annotation, "makeFinal", Boolean.class);
-    if (makeFinal) holder.createWarningAnnotation(keyword, MESSAGE_3).registerFix(new RemoveFinalIntentionAction(keyword));
+    if (PsiFieldUtil.isFinalByAnnotation(psiField)) holder.createWarningAnnotation(keyword, MESSAGE_3).registerFix(new RemoveFinalIntentionAction(keyword));
   }
 }

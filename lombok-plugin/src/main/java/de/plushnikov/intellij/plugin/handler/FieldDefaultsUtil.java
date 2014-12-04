@@ -49,7 +49,6 @@ import com.intellij.psi.util.PsiUtil;
 import de.plushnikov.intellij.plugin.psi.LombokLightModifierList;
 import de.plushnikov.intellij.plugin.util.LombokProcessorUtil;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
-import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import lombok.experimental.FieldDefaults;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -60,6 +59,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.intellij.codeInsight.AnnotationUtil.findAnnotation;
+import static de.plushnikov.intellij.plugin.util.PsiFieldUtil.isFinalByAnnotation;
 
 /**
  * @author Suburban Squirrel
@@ -73,7 +73,7 @@ final public class FieldDefaultsUtil {
 
   @Nullable
   public static HighlightInfo checkFinalFieldInitialized(PsiField field) {
-    if (!isFinalByFieldDefault(field)) return null;
+    if (!isFinalByAnnotation(field)) return null;
     if (isFinalFieldInitialized(field)) return null;
 
     String description = JavaErrorMessages.message("variable.not.initialized", field.getName());
@@ -187,7 +187,7 @@ final public class FieldDefaultsUtil {
     }
     final PsiElement resolved = reference == null ? null : reference.resolve();
     PsiVariable variable = resolved instanceof PsiVariable ? (PsiVariable)resolved : null;
-    if (variable == null || !isFinalByFieldDefault(variable)) return null;
+    if (variable == null || !isFinalByAnnotation(variable)) return null;
     final boolean canWrite = canWriteToFinal(variable, expression, reference, containingFile) && checkWriteToFinalInsideLambda(variable, reference) == null;
     if (readBeforeWrite || !canWrite) {
       final String name = variable.getName();
@@ -251,7 +251,7 @@ final public class FieldDefaultsUtil {
 
   @Nullable
   public static HighlightInfo checkVariableMustBeFinal(@NotNull PsiField variable, @NotNull PsiJavaCodeReferenceElement context, @NotNull LanguageLevel languageLevel) {
-    if (!isFinalByFieldDefault(variable)) return null;
+    if (!isFinalByAnnotation(variable)) return null;
     final PsiElement innerClass = HighlightControlFlowUtil.getInnerClassVariableReferencedFrom(variable, context);
     if (innerClass instanceof PsiClass) {
       if (languageLevel.isAtLeast(LanguageLevel.JDK_1_8) && HighlightControlFlowUtil.isEffectivelyFinal(variable, innerClass, context)) return null;
@@ -267,7 +267,7 @@ final public class FieldDefaultsUtil {
   @Nullable
   public static HighlightInfo checkVariableInitializedBeforeUsage(PsiReferenceExpression expression, PsiVariable variable,
                                                                   Map<PsiElement, Collection<PsiReferenceExpression>> uninitializedVarProblems, @NotNull PsiFile containingFile) {
-    if (!isFinalByFieldDefault(variable)) return null;
+    if (!isFinalByAnnotation(variable)) return null;
     return HighlightControlFlowUtil.checkVariableInitializedBeforeUsage(expression, variable, uninitializedVarProblems, containingFile);
   }
 
@@ -280,10 +280,6 @@ final public class FieldDefaultsUtil {
   }
 
 // end copy past with changes block todo
-
-  public static boolean isFinalByFieldDefault(@NotNull PsiVariable field) {
-    return !field.hasModifierProperty(PsiModifier.FINAL) && PsiFieldUtil.isFinal(field);
-  }
 
   /**
    * Check accessible for this field in current place (include @FieldDefaults changes)

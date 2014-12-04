@@ -5,6 +5,7 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDeclarationStatement;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiForStatement;
 import com.intellij.psi.PsiLambdaExpression;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
@@ -50,15 +51,17 @@ public class PsiFieldUtil {
   }
 
   public static boolean isFinal(@NotNull PsiVariable variable) {
-    if (variable.hasModifierProperty(PsiModifier.FINAL)) return true;
+    return variable.hasModifierProperty(PsiModifier.FINAL) || isFinalByAnnotation(variable);
+  }
 
+  public static boolean isFinalByAnnotation(@NotNull PsiVariable variable) {
     if (isAnnotatedWith(variable, NonFinal.class)) return false;
 
   // check Final.
     PsiElement parent = variable.getParent();
     PsiMethod method = PsiTreeUtil.getParentOfType(variable, PsiMethod.class);
-    if (method != null && (parent instanceof PsiParameterList || parent instanceof PsiDeclarationStatement)
-        && isAnnotatedWith(method, Final.class) && !(parent.getParent() instanceof PsiLambdaExpression)) return true;
+    if (method != null && (parent instanceof PsiParameterList || parent instanceof PsiDeclarationStatement) && isAnnotatedWith(method, Final.class)
+        && !(parent.getParent() instanceof PsiLambdaExpression) && !(parent.getParent() instanceof PsiForStatement)) return true;
     if (method != null && parent instanceof PsiParameterList && isAnnotatedWith(method, FinalArgs.class) && !(parent.getParent() instanceof PsiLambdaExpression)) return true;
 
     if (!(variable instanceof PsiField)) return false;
