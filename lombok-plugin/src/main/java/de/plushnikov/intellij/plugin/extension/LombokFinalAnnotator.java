@@ -74,7 +74,7 @@ public class LombokFinalAnnotator implements Annotator {
     if (finalAnnotation != null && finalArgsAnnotation != null) holder.createWarningAnnotation(finalArgsAnnotation, MESSAGE_1).registerFix(new RemoveFinalIntentionAction(keyword));
 
     PsiVariable variable = PsiTreeUtil.getParentOfType(keyword, PsiVariable.class);
-    if (PsiFieldUtil.isFinalByAnnotation(variable)) {
+    if (variable != null && PsiFieldUtil.isFinalByAnnotation(variable)) {
       if (finalArgsAnnotation != null) holder.createWarningAnnotation(keyword, String.format(MESSAGE_2, finalArgsAnnotation.getQualifiedName())).registerFix(new RemoveFinalIntentionAction(keyword));
       if (finalAnnotation != null) holder.createWarningAnnotation(keyword, String.format(MESSAGE_2, finalAnnotation.getQualifiedName())).registerFix(new RemoveFinalIntentionAction(keyword));
     }
