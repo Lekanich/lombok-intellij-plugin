@@ -1,11 +1,13 @@
 package de.plushnikov.intellij.plugin.util;
 
 import com.intellij.psi.PsiAnnotation;
+import com.intellij.psi.PsiCatchSection;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDeclarationStatement;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiForStatement;
+import com.intellij.psi.PsiForeachStatement;
 import com.intellij.psi.PsiLambdaExpression;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
@@ -60,9 +62,10 @@ public class PsiFieldUtil {
   // check Final.
     PsiElement parent = variable.getParent();
     PsiMethod method = PsiTreeUtil.getParentOfType(variable, PsiMethod.class);
-    if (method != null && (parent instanceof PsiParameterList || parent instanceof PsiDeclarationStatement) && isAnnotatedWith(method, Final.class)
-        && !(parent.getParent() instanceof PsiLambdaExpression) && !(parent.getParent() instanceof PsiForStatement)) return true;
-    if (method != null && parent instanceof PsiParameterList && isAnnotatedWith(method, FinalArgs.class) && !(parent.getParent() instanceof PsiLambdaExpression)) return true;
+    if (method != null && isAnnotatedWith(method, Final.class)
+        && (parent instanceof PsiParameterList || parent instanceof PsiDeclarationStatement || parent instanceof PsiCatchSection || parent instanceof PsiForeachStatement)
+        && !(parent.getParent() instanceof PsiLambdaExpression) && !(parent.getParent() instanceof PsiForStatement)) return true;                                                             // for Final
+    if (method != null && isAnnotatedWith(method, FinalArgs.class) && parent instanceof PsiParameterList && !(parent.getParent() instanceof PsiLambdaExpression)) return true;                // for FinalArgs
 
     if (!(variable instanceof PsiField)) return false;
 
