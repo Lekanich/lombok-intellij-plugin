@@ -192,8 +192,10 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.0.41</li>
+		    <br> Fixed foreach and catch for @Final()
 		<li>1.0.39</li>
-		    <br> Fixes @Final scope for FOR
+		    <br> Fixed @Final scope for FOR
 		<li>1.0.38</li>
 		    <br> Added warning for NonNull annotation (when NonNulArgs)
 		<li>1.0.37</li>
