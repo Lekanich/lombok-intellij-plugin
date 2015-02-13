@@ -3,7 +3,7 @@
   <id>Lombook Plugin</id>
   <name>Lombok Plugin</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>0.8.8</version>
+  <version>0.9.1</version>
 
   <idea-version since-build="138.00"/>
 
@@ -46,6 +46,10 @@
     <colorSettingsPage implementation="de.plushnikov.intellij.plugin.language.LombokConfigColorSettingsPage"/>
     <completion.contributor language="Lombok.Config" implementationClass="de.plushnikov.intellij.plugin.language.LombokConfigCompletionContributor"/>
     <lang.commenter language="Lombok.Config" implementationClass="de.plushnikov.intellij.plugin.language.LombokConfigCommentor"/>
+
+		<fileBasedIndex implementation="de.plushnikov.intellij.plugin.lombokconfig.LombokConfigIndex"/>
+
+		<custom.exception.handler implementation="de.plushnikov.intellij.plugin.handler.SneakyThrowsExceptionHandler"/>
   </extensions>
 
   <extensions defaultExtensionNs="Lombook Plugin">
@@ -65,11 +69,15 @@
     <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.GetterProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.SetterProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ToStringProcessor"/>
-    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ValueProcessor"/>
-    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ValueExperimentalProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.WitherProcessor"/>
-    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.BuilderClassProcessor"/>
-    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.BuilderProcessor"/>
+
+		<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.BuilderClassProcessor"/>
+		<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.BuilderProcessor"/>
+		<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.BuilderExperimentalClassProcessor"/>
+		<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.BuilderExperimentalProcessor"/>
+
+		<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ValueProcessor"/>
+		<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ValueExperimentalProcessor"/>
 
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.DelegateFieldProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.DelegateExperimentalFieldProcessor"/>
@@ -79,8 +87,11 @@
 
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.DelegateMethodProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.DelegateExperimentalMethodProcessor"/>
-    <processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderClassMethodProcessor"/>
+
+		<processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderClassMethodProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderMethodProcessor"/>
+		<processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderExperimentalClassMethodProcessor"/>
+		<processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderExperimentalMethodProcessor"/>
 
     <!-- lombok-pg-->
     <processor implementation="de.plushnikov.intellij.plugin.processor_pg.clazz.FluentSetterProcessor"/>
@@ -146,6 +157,9 @@
       <action id="delombokDelegate" class="de.plushnikov.intellij.plugin.action.delombok.DelombokDelegateAction"
               text="@Delegate" description="Action to replace lombok @Delegate annotation with vanilla java methods">
       </action>
+      <action id="delombokBuilder" class="de.plushnikov.intellij.plugin.action.delombok.DelombokBuilderAction"
+              text="@Builder" description="Action to replace lombok @Builder annotation with vanilla java methods">
+      </action>
       <separator/>
       <action id="delombokConstructor" class="de.plushnikov.intellij.plugin.action.delombok.DelombokConstructorAction"
               text="@Constructors"
@@ -179,6 +193,26 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>0.9.1
+				<ol>
+				    <li></li>
+				</ol>
+			</li>
+			<li>0.9.0
+				<ol>
+				    <li>Added Delombok Feature for @Builder</li>
+				    <li>Issue #53: Basic Support for Lombok configuration keys</li>
+				    <li>Fixed #57: Incorrect constructors appear in "Structure" when `@Value` and `@Builder`</li>
+				    <li>Fixed #70: Conflict resolution failed on renaming field together with its accessors in IntelliJ 14</li>
+				    <li>Issue #74: Fixed (only IntelliJ 14+) Sneaky Throws Not Correctly Detected for Anonymous Inner Class </li>
+						<li>Issue #75: Added support for @lombok.Builder (lombok version 1.16)</li>
+				</ol>
+			</li>
+		  <li>0.8.9
+				<ol>
+				    <li>Fixed #67: Updates and Improvements for IntelliJ 14, fixed incompatibility</li>
+				</ol>
+			</li>
 			<li>0.8.8
 				<ol>
 				    <li>Fixed #52 : Invalid stub element type in index</li>

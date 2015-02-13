@@ -30,6 +30,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
 public class BaseDelombokHandler {
@@ -59,9 +60,11 @@ public class BaseDelombokHandler {
   }
 
   private void invoke(Project project, PsiClass psiClass) {
+    Collection<PsiAnnotation> processedAnnotations = new HashSet<PsiAnnotation>();
     for (AbstractProcessor lombokProcessor : lombokProcessors) {
-      processClass(project, psiClass, lombokProcessor);
+      processedAnnotations.addAll(processClass(project, psiClass, lombokProcessor));
     }
+    deleteAnnotations(processedAnnotations);
   }
 
   private void finish(Project project, PsiFile psiFile) {
@@ -69,7 +72,7 @@ public class BaseDelombokHandler {
     UndoUtil.markPsiFileForUndo(psiFile);
   }
 
-  protected void processClass(@NotNull Project project, @NotNull PsiClass psiClass, @NotNull AbstractProcessor lombokProcessor) {
+  protected Collection<PsiAnnotation> processClass(@NotNull Project project, @NotNull PsiClass psiClass, @NotNull AbstractProcessor lombokProcessor) {
     Collection<PsiAnnotation> psiAnnotations = lombokProcessor.collectProcessedAnnotations(psiClass);
 
     List<? super PsiElement> psiElements = lombokProcessor.process(psiClass);
@@ -77,13 +80,16 @@ public class BaseDelombokHandler {
     ProjectSettings.setEnabledInProject(project, false);
     try {
       for (Object psiElement : psiElements) {
-        psiClass.add(rebuildPsiElement(project, (PsiElement) psiElement));
+        final PsiElement element = rebuildPsiElement(project, (PsiElement) psiElement);
+        if (null != element) {
+          psiClass.add(element);
+        }
       }
     } finally {
       ProjectSettings.setEnabledInProject(project, true);
     }
 
-    deleteAnnotations(psiAnnotations);
+    return psiAnnotations;
   }
 
   public Collection<PsiAnnotation> collectProcessableAnnotations(@NotNull PsiClass psiClass) {
@@ -102,9 +108,25 @@ public class BaseDelombokHandler {
     } else if (psiElement instanceof PsiField) {
       return rebuildField(project, (PsiField) psiElement);
     } else if (psiElement instanceof PsiClass) {
-      //TODO
+      return rebuildClass(project, (PsiClass) psiElement);
     }
     return null;
+  }
+
+  private PsiClass rebuildClass(@NotNull Project project, @NotNull PsiClass fromClass) {
+    final PsiElementFactory elementFactory = JavaPsiFacade.getInstance(project).getElementFactory();
+
+    PsiClass resultClass = elementFactory.createClass(fromClass.getName());
+    copyModifiers(fromClass.getModifierList(), resultClass.getModifierList());
+
+    for (PsiField psiField : fromClass.getFields()) {
+      resultClass.add(rebuildField(project, psiField));
+    }
+    for (PsiMethod psiMethod : fromClass.getMethods()) {
+      resultClass.add(rebuildMethod(project, psiMethod));
+    }
+
+    return (PsiClass) CodeStyleManager.getInstance(project).reformat(resultClass);
   }
 
   private PsiMethod rebuildMethod(@NotNull Project project, @NotNull PsiMethod fromMethod) {
