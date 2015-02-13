@@ -10,7 +10,7 @@ import de.plushnikov.intellij.plugin.problem.ProblemBuilder;
 import de.plushnikov.intellij.plugin.processor.clazz.constructor.AllArgsConstructorProcessor;
 import de.plushnikov.intellij.plugin.processor.handler.BuilderHandler;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
-import lombok.experimental.Builder;
+import lombok.Builder;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;

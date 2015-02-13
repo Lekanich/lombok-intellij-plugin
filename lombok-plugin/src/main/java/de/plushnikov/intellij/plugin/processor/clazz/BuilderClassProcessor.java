@@ -5,7 +5,7 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import de.plushnikov.intellij.plugin.problem.ProblemBuilder;
 import de.plushnikov.intellij.plugin.processor.handler.BuilderHandler;
-import lombok.experimental.Builder;
+import lombok.Builder;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;

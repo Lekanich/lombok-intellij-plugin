@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.Value;
-import lombok.experimental.Builder;
+import lombok.Builder;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;

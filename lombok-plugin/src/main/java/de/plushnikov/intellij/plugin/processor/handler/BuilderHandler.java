@@ -26,7 +26,7 @@ import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
 import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
-import lombok.experimental.Builder;
+import lombok.Builder;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
