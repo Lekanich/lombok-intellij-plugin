@@ -6,7 +6,6 @@ import com.intellij.codeInsight.daemon.impl.HighlightInfoType;
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightControlFlowUtil;
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightMethodUtil;
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightNamesUtil;
-import com.intellij.codeInsight.daemon.impl.analysis.HighlightUtil;
 import com.intellij.codeInsight.daemon.impl.analysis.JavaHighlightUtil;
 import com.intellij.codeInsight.daemon.impl.quickfix.QuickFixAction;
 import com.intellij.codeInsight.intention.QuickFixFactory;
@@ -19,6 +18,7 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiClassInitializer;
 import com.intellij.psi.PsiCodeBlock;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiEnumConstant;
 import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
@@ -224,7 +224,7 @@ final public class FieldDefaultsUtil {
     PsiElement innerClass = HighlightControlFlowUtil.getInnerClassVariableReferencedFrom(variable, expression);
     if (variable instanceof PsiField) {
       // if inside some field initializer
-      if (HighlightUtil.findEnclosingFieldInitializer(expression) != null) return true;
+      if (findEnclosingFieldInitializer(expression) != null) return true;
       // assignment from within inner class is illegal always
       PsiField field = (PsiField)variable;
       if (innerClass != null && !containingFile.getManager().areElementsEquivalent(innerClass, field.getContainingClass())) return false;
@@ -237,6 +237,24 @@ final public class FieldDefaultsUtil {
       if (isAccessedFromOtherClass) return false;
     }
     return true;
+  }
+
+  /**
+   * @return field that has initializer with this element as subexpression or null if not found
+   */
+  @Nullable
+  static PsiField findEnclosingFieldInitializer(@Nullable PsiElement element) {
+    while (element != null) {
+      PsiElement parent = element.getParent();
+      if (parent instanceof PsiField) {
+        PsiField field = (PsiField)parent;
+        if (element == field.getInitializer()) return field;
+        if (field instanceof PsiEnumConstant && element == ((PsiEnumConstant)field).getArgumentList()) return field;
+      }
+      if (element instanceof PsiClass || element instanceof PsiMethod) return null;
+      element = parent;
+    }
+    return null;
   }
 
   private static boolean isSameField(final PsiVariable variable,
