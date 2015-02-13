@@ -62,13 +62,8 @@ public class LombokLoggerHandler extends BaseLombokHandler {
 
   private boolean isValidLoggerField(@NotNull PsiField psiField, @NotNull String lombokLoggerName, boolean lombokLoggerIsStatic) {
     boolean isPrivate = psiField.hasModifierProperty(PsiModifier.PRIVATE);
-
-    boolean isStatic = psiField.hasModifierProperty(PsiModifier.STATIC);
-    boolean isFinal = PsiFieldUtil.isFinal(psiField);
-    boolean isProperlyNamed = LOMBOK_LOGGER_NAME.equals(psiField.getName());
-    //fixme
     boolean isStatic = lombokLoggerIsStatic == psiField.hasModifierProperty(PsiModifier.STATIC);
-    boolean isFinal = psiField.hasModifierProperty(PsiModifier.FINAL);
+    boolean isFinal = PsiFieldUtil.isFinal(psiField);
     boolean isProperlyNamed = lombokLoggerName.equals(psiField.getName());
 
     return isPrivate & isStatic & isFinal & isProperlyNamed;
