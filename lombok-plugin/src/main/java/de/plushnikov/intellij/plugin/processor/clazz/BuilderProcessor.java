@@ -10,9 +10,10 @@ import de.plushnikov.intellij.plugin.problem.ProblemBuilder;
 import de.plushnikov.intellij.plugin.processor.clazz.constructor.AllArgsConstructorProcessor;
 import de.plushnikov.intellij.plugin.processor.handler.BuilderHandler;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
-import lombok.experimental.Builder;
+import lombok.Builder;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.List;
 
@@ -29,7 +30,11 @@ public class BuilderProcessor extends AbstractClassProcessor {
   private final AllArgsConstructorProcessor allArgsConstructorProcessor = new AllArgsConstructorProcessor();
 
   public BuilderProcessor() {
-    super(Builder.class, PsiMethod.class);
+    this(Builder.class);
+  }
+
+  protected BuilderProcessor(@NotNull Class<? extends Annotation> builderClass) {
+    super(builderClass, PsiMethod.class);
   }
 
   @Override
@@ -41,7 +46,7 @@ public class BuilderProcessor extends AbstractClassProcessor {
     final Collection<PsiMethod> definedConstructors = PsiClassUtil.collectClassConstructorIntern(psiClass);
     // Create all args constructor only if there is no declared constructors
     if (definedConstructors.isEmpty()) {
-      target.addAll(allArgsConstructorProcessor.createAllArgsConstructor(psiClass, PsiModifier.DEFAULT, psiAnnotation));
+      target.addAll(allArgsConstructorProcessor.createAllArgsConstructor(psiClass, PsiModifier.PACKAGE_LOCAL, psiAnnotation));
     }
 
     final PsiType psiBuilderType = PsiClassUtil.getTypeWithGenerics(psiClass);

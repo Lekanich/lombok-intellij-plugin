@@ -19,6 +19,7 @@ import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 import lombok.Value;
+import lombok.experimental.Builder;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
@@ -83,7 +84,7 @@ public class ValueProcessor extends AbstractClassProcessor {
       target.addAll(new ToStringProcessor().createToStringMethod(psiClass, psiAnnotation));
     }
     // create required constructor only if there are no other constructor annotations
-    if (PsiAnnotationUtil.isNotAnnotatedWith(psiClass, NoArgsConstructor.class, RequiredArgsConstructor.class, AllArgsConstructor.class)) {
+    if (PsiAnnotationUtil.isNotAnnotatedWith(psiClass, NoArgsConstructor.class, RequiredArgsConstructor.class, AllArgsConstructor.class, Builder.class)) {
       final Collection<PsiMethod> definedConstructors = PsiClassUtil.collectClassConstructorIntern(psiClass);
       filterToleratedElements(definedConstructors);
       // and only if there are no any other constructors!
@@ -94,10 +95,9 @@ public class ValueProcessor extends AbstractClassProcessor {
         final Collection<PsiField> requiredFields = allArgsConstructorProcessor.getAllFields(psiClass);
 
         if (allArgsConstructorProcessor.validateIsConstructorDefined(psiClass, staticName, requiredFields, ProblemEmptyBuilder.getInstance())) {
-          target.addAll(allArgsConstructorProcessor.createAllArgsConstructor(psiClass, PsiModifier.PUBLIC, psiAnnotation, staticName));
+          target.addAll(allArgsConstructorProcessor.createAllArgsConstructor(psiClass, PsiModifier.PUBLIC, psiAnnotation, staticName, requiredFields));
         }
       }
     }
   }
-
 }
