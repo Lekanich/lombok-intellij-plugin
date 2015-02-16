@@ -47,7 +47,7 @@
     <completion.contributor language="Lombok.Config" implementationClass="de.plushnikov.intellij.plugin.language.LombokConfigCompletionContributor"/>
     <lang.commenter language="Lombok.Config" implementationClass="de.plushnikov.intellij.plugin.language.LombokConfigCommentor"/>
 
-    <completion.contributor language="JAVA" id="lombokContributor" implementationClass="de.plushnikov.intellij.plugin.extension.LombokCompletionContributor"
+    <completion.contributor language="JAVA" id="lombokContributor" implementationClass="com.intellij.codeInsight.completion.LombokCompletionContributor"
                             order="last, before legacy, before default, before javaClassName, before javaLegacy"/>
     <completion.contributor language="JAVA" id="primitiveLombokContributor" implementationClass="de.plushnikov.intellij.plugin.extension.LombokPrimitiveCompletionContributor"
                             order="last, before legacy, before default, before javaClassName, before lombokContributor"/>

@@ -28,7 +28,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 
-import static de.plushnikov.intellij.plugin.extension.LombokCompletionContributor.LombokElementFilter.getCallType;
+import static com.intellij.codeInsight.completion.LombokCompletionContributor.LombokElementFilter.getCallType;
 import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getExtendingMethods;
 import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getType;
 import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.isInExtensionScope;

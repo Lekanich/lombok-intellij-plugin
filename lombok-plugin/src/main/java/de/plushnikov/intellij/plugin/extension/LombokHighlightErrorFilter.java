@@ -31,7 +31,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.siyeh.ig.psiutils.ClassUtils.getContainingClass;
-import static de.plushnikov.intellij.plugin.extension.LombokCompletionContributor.LombokElementFilter.getCallType;
+import static com.intellij.codeInsight.completion.LombokCompletionContributor.LombokElementFilter.getCallType;
 import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getExtendingMethods;
 import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getType;
 import static de.plushnikov.intellij.plugin.handler.FieldDefaultsUtil.isAccessible;
