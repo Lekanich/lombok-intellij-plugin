@@ -12,8 +12,7 @@
 
   <properties>
     <pack.name>lombok-plugin</pack.name>
-    <libs.path>/synced/idea.libs</libs.path>
-    <intellij.sdk.name>135.909</intellij.sdk.name>
+    <intellij.sdk.name>141.104</intellij.sdk.name>
   </properties>
 
   <dependencies>
@@ -55,44 +54,32 @@
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>openapi</artifactId>
-      <scope>system</scope>
       <version>${intellij.sdk.name}</version>
-      <systemPath>${libs.path}/openapi.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>idea-extensions</artifactId>
       <version>${intellij.sdk.name}</version>
-      <scope>system</scope>
-      <systemPath>${libs.path}/extensions.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>idea-util</artifactId>
       <version>${intellij.sdk.name}</version>
-      <scope>system</scope>
-      <systemPath>${libs.path}/util.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>idea-annotations</artifactId>
       <version>${intellij.sdk.name}</version>
-      <scope>system</scope>
-      <systemPath>${libs.path}/annotations.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>idea</artifactId>
       <version>${intellij.sdk.name}</version>
-      <scope>system</scope>
-      <systemPath>${libs.path}/idea.jar</systemPath>
     </dependency>
     <dependency>
       <groupId>com.intellij</groupId>
       <artifactId>forms_rt</artifactId>
       <version>${intellij.sdk.name}</version>
-      <scope>system</scope>
-      <systemPath>${libs.path}/forms_rt.jar</systemPath>
     </dependency>
   </dependencies>
 

@@ -1,5 +1,6 @@
 package com.intellij.codeInsight.completion;
 
+import com.intellij.codeInsight.ExpectedTypeInfo;
 import com.intellij.codeInsight.TailType;
 import com.intellij.codeInsight.completion.scope.JavaCompletionProcessor;
 import com.intellij.codeInsight.lookup.LookupElement;
@@ -26,6 +27,7 @@ import com.intellij.psi.PsiAnnotationMemberValue;
 import com.intellij.psi.PsiAnnotationMethod;
 import com.intellij.psi.PsiAnnotationParameterList;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiClassObjectAccessExpression;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiExpression;
 import com.intellij.psi.PsiField;
@@ -36,6 +38,7 @@ import com.intellij.psi.PsiJavaCodeReferenceCodeFragment;
 import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiJavaReference;
 import com.intellij.psi.PsiJavaToken;
+import com.intellij.psi.PsiKeyword;
 import com.intellij.psi.PsiLiteralExpression;
 import com.intellij.psi.PsiLocalVariable;
 import com.intellij.psi.PsiMethod;
@@ -57,6 +60,7 @@ import com.intellij.psi.filters.ElementFilter;
 import com.intellij.psi.filters.OrFilter;
 import com.intellij.psi.filters.TrueFilter;
 import com.intellij.psi.filters.element.ModifierFilter;
+import com.intellij.psi.filters.getters.JavaMembersGetter;
 import com.intellij.psi.impl.source.PsiLabelReference;
 import com.intellij.psi.scope.ElementClassFilter;
 import com.intellij.psi.util.PsiTreeUtil;
@@ -86,6 +90,7 @@ import static com.intellij.patterns.PsiJavaPatterns.psiElement;
 import static com.intellij.patterns.PsiJavaPatterns.psiExpressionStatement;
 import static com.intellij.patterns.PsiJavaPatterns.psiNameValuePair;
 import static com.intellij.patterns.PsiJavaPatterns.psiReferenceExpression;
+import static com.intellij.patterns.StandardPatterns.not;
 import static com.intellij.patterns.StandardPatterns.or;
 import static com.intellij.psi.util.PsiTypesUtil.getPsiClass;
 import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getExtendingMethods;
@@ -245,8 +250,8 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
 
     final CompletionResultSet result = JavaCompletionSorting.addJavaSorting(parameters, _result);
 
-    if (ANNOTATION_ATTRIBUTE_NAME.accepts(position) && !JavaCompletionData.isAfterPrimitiveOrArrayType(position)) {
-      JavaCompletionData.addExpectedTypeMembers(parameters, result);
+    if (ANNOTATION_ATTRIBUTE_NAME.accepts(position) && !isAfterPrimitiveOrArrayType(position)) {
+      addExpectedTypeMembers(parameters, result);
       completeAnnotationAttributeName(result, position, parameters);
       result.stopHere();
       return;
@@ -254,7 +259,12 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
 
     final InheritorsHolder inheritors = new InheritorsHolder(position, result);
     if (IN_TYPE_ARGS.accepts(position)) {
-      new TypeArgumentCompletionProvider(false, inheritors).addCompletions(parameters, new ProcessingContext(), result);
+      new TypeArgumentCompletionProvider(false, inheritors){
+        @Override
+        public void addCompletions(@NotNull CompletionParameters parameters, ProcessingContext processingContext, @NotNull CompletionResultSet resultSet) {
+          super.addCompletions(parameters, processingContext, resultSet);
+        }
+      }.addCompletions(parameters, new ProcessingContext(), result);
     }
 
     PrefixMatcher matcher = result.getPrefixMatcher();
@@ -295,6 +305,21 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
       new JavaStaticMemberProcessor(parameters).processStaticMethodsGlobally(matcher, result);
     }
     result.stopHere();
+  }
+
+  static void addExpectedTypeMembers(CompletionParameters parameters, final CompletionResultSet result) {
+    if (parameters.getInvocationCount() <= 1) { // on second completion, StaticMemberProcessor will suggest those
+      for (final ExpectedTypeInfo info : JavaSmartCompletionContributor.getExpectedTypes(parameters)) {
+        new JavaMembersGetter(info.getDefaultType(), parameters).addMembers(false, result);
+      }
+    }
+  }
+
+  static boolean isAfterPrimitiveOrArrayType(PsiElement element) {
+    return psiElement().withParent(
+      psiReferenceExpression().withFirstChild(
+        psiElement(PsiClassObjectAccessExpression.class).withLastChild(
+          not(psiElement().withText(PsiKeyword.CLASS))))).accepts(element);
   }
 
   private static void completeAnnotationAttributeName(CompletionResultSet result, PsiElement insertedElement,

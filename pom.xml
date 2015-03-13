@@ -14,6 +14,10 @@
       <id>hamsters-jenkins</id>
       <url>http://repu.huyaru.com/</url>
     </repository>
+    <repository>
+      <id>hamster-bamboo</id>
+      <url>http://docker.huyaru.com:6080/repository/internal/</url>
+    </repository>
   </repositories>
 
   <modules>
