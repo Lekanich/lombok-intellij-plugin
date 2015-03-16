@@ -12,7 +12,7 @@
   <distributionManagement>
     <repository>
       <id>${hamster.repository.id}</id>
-      <url>${hamster.repository.id}</url>
+      <url>${hamster.repository.url}</url>
     </repository>
   </distributionManagement>
 
@@ -23,7 +23,7 @@
     </repository>
     <repository>
       <id>${hamster.repository.id}</id>
-      <url>${hamster.repository.id}</url>
+      <url>${hamster.repository.url}</url>
     </repository>
   </repositories>
 
@@ -47,8 +47,8 @@
     <lombok.version>2.16.3.13</lombok.version>
     <lombok-pg.version>0.11.3</lombok-pg.version>
     <hrisey.version>0.1.1</hrisey.version>
-    <hamster.repository.id>hamster-bamboo</hamster.repository.id>
-    <hamster.repository.id>http://docker.huyaru.com:6080/repository/internal/</hamster.repository.id>
+    <hamster.repository.id>internal</hamster.repository.id>
+    <hamster.repository.url>http://192.168.4.104:6080/repository/internal</hamster.repository.url>
   </properties>
 
   <dependencyManagement>
