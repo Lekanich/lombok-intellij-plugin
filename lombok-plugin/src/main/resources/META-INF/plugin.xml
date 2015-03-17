@@ -3,7 +3,7 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.0.45</version>
+  <version>1.0.46</version>
 
   <idea-version since-build="138.00"/>
 
@@ -215,6 +215,8 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+      <li>1.0.46</li>
+          <br> merge with original
       <li>1.0.45</li>
           <br> rebuild
       <li>1.0.44</li>

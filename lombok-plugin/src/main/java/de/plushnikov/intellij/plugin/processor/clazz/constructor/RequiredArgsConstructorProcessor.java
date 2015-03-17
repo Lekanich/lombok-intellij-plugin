@@ -11,7 +11,6 @@ import de.plushnikov.intellij.plugin.problem.ProblemBuilder;
 import de.plushnikov.intellij.plugin.thirdparty.LombokUtils;
 import de.plushnikov.intellij.plugin.util.LombokProcessorUtil;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
-import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 import org.jetbrains.annotations.NotNull;
@@ -67,10 +66,6 @@ public class RequiredArgsConstructorProcessor extends AbstractConstructorClassPr
     for (PsiField psiField : getAllNotInitializedAndNotStaticFields(psiClass)) {
       final PsiModifierList modifierList = psiField.getModifierList();
       if (null != modifierList) {
-//        boolean isFinal = PsiFieldUtil.isFinal(psiField);
-//        if (!isFinal && classAnnotatedWithValue) {
-//          isFinal = PsiAnnotationUtil.isNotAnnotatedWith(psiField, NonFinal.class);
-//        }
         final boolean isFinal = isFieldFinal(psiField, modifierList, classAnnotatedWithValue);
         final boolean isNonNull = PsiAnnotationUtil.isAnnotatedWith(psiField, LombokUtils.NON_NULL_PATTERN);
         // accept initialized final or nonnull fields
