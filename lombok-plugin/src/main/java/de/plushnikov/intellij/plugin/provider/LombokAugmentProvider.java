@@ -1,11 +1,14 @@
 package de.plushnikov.intellij.plugin.provider;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbService;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.PsiTypeElement;
@@ -61,13 +64,6 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
     if (!(type.isAssignableFrom(PsiMethod.class) || type.isAssignableFrom(PsiField.class) || type.isAssignableFrom(PsiClass.class))) {
       return emptyResult;
     }
-
-    final AugmentCallData currentAugmentData = new AugmentCallData(element, type);
-    if (recursionBreaker.get().contains(currentAugmentData)) {
-      log.debug("Prevented recursion call");
-      return emptyResult;
-    }
-
     // skip processing during index rebuild
     final Project project = element.getProject();
     if (DumbService.getInstance(project).isDumb()) {
@@ -80,22 +76,42 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
 
     initRegisteredAnnotations();
 
+    final AugmentCallData currentAugmentData = new AugmentCallData(element, type);
+    if (recursionBreaker.get().contains(currentAugmentData)) {
+      log.debug("Prevented recursion call");
+      return emptyResult;
+    }
+
     recursionBreaker.get().add(currentAugmentData);
     try {
       final PsiClass psiClass = (PsiClass) element;
 
-      final boolean isLombokPresent = UserMapKeys.isLombokPossiblePresent(element);
-      if (!isLombokPresent) {
-        if (log.isDebugEnabled()) {
-          log.debug(String.format("Skipped call for type: %s class: %s", type, psiClass.getQualifiedName()));
+      boolean fileOpenInEditor = true;
+      final PsiFile containingFile = psiClass.getContainingFile();
+      if (null != containingFile) {
+        final VirtualFile virtualFile = containingFile.getVirtualFile();
+        if (null != virtualFile) {
+          fileOpenInEditor = FileEditorManager.getInstance(project).isFileOpen(virtualFile);
         }
-        return emptyResult;
       }
 
-      return process(type, project, psiClass);
+      if (fileOpenInEditor || checkLombokPresent(psiClass)) {
+        return process(type, project, psiClass);
+      }
     } finally {
       recursionBreaker.get().remove(currentAugmentData);
     }
+
+    return emptyResult;
+  }
+
+  private boolean checkLombokPresent(PsiClass psiClass) {
+    boolean result = UserMapKeys.isLombokPossiblePresent(psiClass);
+    if (result) {
+      result = verifyLombokAnnotationPresent(psiClass);
+    }
+    UserMapKeys.updateLombokPresent(psiClass, result);
+    return result;
   }
 
   @Nullable
@@ -118,31 +134,20 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
   }
 
   private <Psi extends PsiElement> List<Psi> process(@NotNull Class<Psi> type, @NotNull Project project, @NotNull PsiClass psiClass) {
-    final boolean isLombokPossiblePresent = verifyLombokPresent(psiClass);
+    if (log.isDebugEnabled()) {
+      log.debug(String.format("Process call for type: %s class: %s", type, psiClass.getQualifiedName()));
+    }
 
-    UserMapKeys.updateLombokPresent(psiClass, isLombokPossiblePresent);
-
-    if (isLombokPossiblePresent) {
-      if (log.isDebugEnabled()) {
-        log.debug(String.format("Process call for type: %s class: %s", type, psiClass.getQualifiedName()));
-      }
-
-      final List<Psi> result = new ArrayList<Psi>();
-      for (Processor processor : LombokProcessorExtensionPoint.EP_NAME.getExtensions()) {
-        if (processor.canProduce(type) && processor.isEnabled(project)) {
-          result.addAll((Collection<Psi>) processor.process(psiClass));
-        }
-      }
-      return result;
-    } else {
-      if (log.isDebugEnabled()) {
-        log.debug(String.format("Skipped call for type: %s class: %s", type, psiClass.getQualifiedName()));
+    final List<Psi> result = new ArrayList<Psi>();
+    for (Processor processor : LombokProcessorExtensionPoint.EP_NAME.getExtensions()) {
+      if (processor.canProduce(type) && processor.isEnabled(project)) {
+        result.addAll((Collection<Psi>) processor.process(psiClass));
       }
     }
-    return Collections.emptyList();
+    return result;
   }
 
-  private boolean verifyLombokPresent(@NotNull PsiClass psiClass) {
+  private boolean verifyLombokAnnotationPresent(@NotNull PsiClass psiClass) {
     return true;
 //    if (PsiAnnotationUtil.checkAnnotationsSimpleNameExistsIn(psiClass, registeredAnnotationNames)) {
 //      return true;
@@ -159,10 +164,14 @@ public class LombokAugmentProvider extends PsiAugmentProvider {
 //        return true;
 //      }
 //    }
+//    final PsiElement psiClassParent = psiClass.getParent();
+//    if (psiClassParent instanceof PsiClass) {
+//      return verifyLombokAnnotationPresent((PsiClass) psiClassParent);
+//    }
 //    if (isExtensible(psiClass)) {
 //      return true;
 //    }
-//
+
 //    return false;
   }
 

@@ -28,10 +28,12 @@
   </extensionPoints>
 
   <extensions defaultExtensionNs="com.intellij">
+    <applicationService serviceImplementation="de.plushnikov.intellij.plugin.settings.LombokSettings"/>
+
     <lang.psiAugmentProvider implementation="de.plushnikov.intellij.plugin.provider.LombokAugmentProvider"/>
     <implicitUsageProvider implementation="de.plushnikov.intellij.plugin.provider.LombokImplicitUsageProvider"/>
     <inspectionToolProvider implementation="de.plushnikov.intellij.plugin.provider.LombokInspectionProvider"/>
-    <projectConfigurable implementation="de.plushnikov.intellij.plugin.settings.ProjectSettingsPage"/>
+    <projectConfigurable instance="de.plushnikov.intellij.plugin.settings.ProjectSettingsPage"/>
 
     <renameHandler implementation="de.plushnikov.intellij.plugin.extension.LombokElementRenameHandler" order="FIRST"/>
     <treeGenerator implementation="de.plushnikov.intellij.plugin.extension.LombokLightMethodTreeGenerator"/>
@@ -60,6 +62,9 @@
 		<fileBasedIndex implementation="de.plushnikov.intellij.plugin.lombokconfig.LombokConfigIndex"/>
 
 		<custom.exception.handler implementation="de.plushnikov.intellij.plugin.handler.SneakyThrowsExceptionHandler"/>
+
+    <findUsagesHandlerFactory implementation="de.plushnikov.intellij.plugin.extension.LombokFieldFindUsagesHandlerFactory"/>
+    <renamePsiElementProcessor implementation="de.plushnikov.intellij.plugin.extension.LombokRenameFieldReferenceProcessor"/>
   </extensions>
 
   <extensions defaultExtensionNs="lombok-plugin">
@@ -81,13 +86,17 @@
     <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ToStringProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.WitherProcessor"/>
 
-		<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.BuilderClassProcessor"/>
-		<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.BuilderProcessor"/>
-		<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.BuilderExperimentalClassProcessor"/>
-		<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.BuilderExperimentalProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.builder.BuilderPreDefinedInnerClassFieldProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.builder.BuilderPreDefinedInnerClassMethodProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.builder.BuilderExperimentalPreDefinedInnerClassFieldProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.builder.BuilderExperimentalPreDefinedInnerClassMethodProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.builder.BuilderClassProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.builder.BuilderProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.builder.BuilderExperimentalClassProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.builder.BuilderExperimentalProcessor"/>
 
-		<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ValueProcessor"/>
-		<processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ValueExperimentalProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ValueProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ValueExperimentalProcessor"/>
 
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.DelegateFieldProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.DelegateExperimentalFieldProcessor"/>
@@ -98,10 +107,10 @@
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.DelegateMethodProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.DelegateExperimentalMethodProcessor"/>
 
-		<processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderClassMethodProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderClassMethodProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderMethodProcessor"/>
-		<processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderExperimentalClassMethodProcessor"/>
-		<processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderExperimentalMethodProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderExperimentalClassMethodProcessor"/>
+    <processor implementation="de.plushnikov.intellij.plugin.processor.method.BuilderExperimentalMethodProcessor"/>
 
     <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodBuilderProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.clazz.ExtensionMethodProcessor"/>
@@ -206,15 +215,26 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
-		<li>1.0.45</li>
-		    <br> rebuild
-		<li>1.0.44</li>
-		    <br> Up lombok
-		<li>1.0.43</li>
-		    <br> Merge
-		<li>0.9.1
+      <li>1.0.45</li>
+          <br> rebuild
+      <li>1.0.44</li>
+          <br> Up lombok
+      <li>1.0.43</li>
+          <br> Merge
+		  <li>0.9.2
 				<ol>
-				    <li></li>
+				    <li>Fixed #81: @Builder: buildMethod should have same throws-list as annotated static method</li>
+				    <li>Fixed #82: Abstract Class + @Delegate</li>
+				    <li>Fixed #83: Getting inconvertible types error assigning new builder instance</li>
+				    <li>Fixed #84: Properly find usages of @Getters & @Setters on fields with @Acccessor prefixes</li>
+				</ol>
+			</li>
+		  <li>0.9.1
+				<ol>
+				    <li>Fixed #33: Builder annotation with partial implementation shows errors</li>
+				    <li>Fixed #78: Support for constructors of @Value objects with assigned final fields</li>
+				    <li>Fixed #79: Support for multiple @Builder in same java class</li>
+				    <li>Fixed #80: Some issues with "delomboked" @Builder on static method</li>
 				</ol>
 			</li>
 			<li>0.9.0

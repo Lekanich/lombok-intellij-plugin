@@ -14,7 +14,6 @@ import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
-import lombok.experimental.NonFinal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -66,21 +65,18 @@ public class RequiredArgsConstructorProcessor extends AbstractConstructorClassPr
     final boolean classAnnotatedWithValue = PsiAnnotationUtil.isAnnotatedWith(psiClass, Value.class, lombok.experimental.Value.class);
 
     for (PsiField psiField : getAllNotInitializedAndNotStaticFields(psiClass)) {
-      boolean addField = false;
-
-      PsiModifierList modifierList = psiField.getModifierList();
+      final PsiModifierList modifierList = psiField.getModifierList();
       if (null != modifierList) {
-        boolean isFinal = PsiFieldUtil.isFinal(psiField);
-        if (!isFinal && classAnnotatedWithValue) {
-          isFinal = PsiAnnotationUtil.isNotAnnotatedWith(psiField, NonFinal.class);
-        }
+//        boolean isFinal = PsiFieldUtil.isFinal(psiField);
+//        if (!isFinal && classAnnotatedWithValue) {
+//          isFinal = PsiAnnotationUtil.isNotAnnotatedWith(psiField, NonFinal.class);
+//        }
+        final boolean isFinal = isFieldFinal(psiField, modifierList, classAnnotatedWithValue);
         final boolean isNonNull = PsiAnnotationUtil.isAnnotatedWith(psiField, LombokUtils.NON_NULL_PATTERN);
         // accept initialized final or nonnull fields
-        addField = (isFinal || isNonNull) && null == psiField.getInitializer();
-      }
-
-      if (addField) {
-        result.add(psiField);
+        if ((isFinal || isNonNull) && null == psiField.getInitializer()) {
+          result.add(psiField);
+        }
       }
     }
     return result;
