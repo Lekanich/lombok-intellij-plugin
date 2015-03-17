@@ -9,7 +9,6 @@ import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiType;
 import com.intellij.psi.util.PsiTypesUtil;
-import de.plushnikov.intellij.plugin.extension.UserMapKeys;
 import de.plushnikov.intellij.plugin.problem.ProblemBuilder;
 import de.plushnikov.intellij.plugin.processor.field.AbstractFieldProcessor;
 import de.plushnikov.intellij.plugin.psi.LombokLightMethodBuilder;
@@ -59,18 +58,16 @@ public class EnumIdFieldProcessor extends AbstractFieldProcessor {
     final String methodName = getFindByName(psiField);
 
     PsiClass psiClass = psiField.getContainingClass();
-    assert psiClass != null;
+    if (null != psiClass) {
+      LombokLightMethodBuilder method = new LombokLightMethodBuilder(psiField.getManager(), methodName)
+          .withMethodReturnType(PsiTypesUtil.getClassType(psiClass))
+          .withContainingClass(psiClass)
+          .withParameter(fieldName, psiFieldType)
+          .withNavigationElement(psiField)
+          .withModifier(PsiModifier.PUBLIC, PsiModifier.STATIC);
 
-    UserMapKeys.addWriteUsageFor(psiField);
-
-    LombokLightMethodBuilder method = new LombokLightMethodBuilder(psiField.getManager(), methodName)
-        .withMethodReturnType(PsiTypesUtil.getClassType(psiClass))
-        .withContainingClass(psiClass)
-        .withParameter(fieldName, psiFieldType)
-        .withNavigationElement(psiField)
-        .withModifier(PsiModifier.PUBLIC, PsiModifier.STATIC);
-
-    target.add(method);
+      target.add(method);
+    }
   }
 
   protected String getFindByName(PsiField psiField) {
