@@ -259,7 +259,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
 
     final InheritorsHolder inheritors = new InheritorsHolder(position, result);
     if (IN_TYPE_ARGS.accepts(position)) {
-      new TypeArgumentCompletionProvider(false, inheritors){
+      new TypeArgumentCompletionProviderEx(false, inheritors){
         @Override
         public void addCompletions(@NotNull CompletionParameters parameters, ProcessingContext processingContext, @NotNull CompletionResultSet resultSet) {
           super.addCompletions(parameters, processingContext, resultSet);

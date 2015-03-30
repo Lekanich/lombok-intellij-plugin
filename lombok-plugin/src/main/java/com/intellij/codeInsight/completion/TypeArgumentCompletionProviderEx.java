@@ -47,12 +47,12 @@ import static com.intellij.patterns.PsiJavaPatterns.psiElement;
 /**
 * @author peter
 */
-class TypeArgumentCompletionProvider extends CompletionProvider<CompletionParameters> {
+class TypeArgumentCompletionProviderEx extends CompletionProvider<CompletionParameters> {
   private static final Logger LOG = Logger.getInstance("#com.intellij.codeInsight.completion.TypeArgumentCompletionProvider");
   private final boolean mySmart;
   @Nullable private final InheritorsHolder myInheritors;
 
-  TypeArgumentCompletionProvider(boolean smart, @Nullable InheritorsHolder inheritors) {
+  TypeArgumentCompletionProviderEx(boolean smart, @Nullable InheritorsHolder inheritors) {
     mySmart = smart;
     myInheritors = inheritors;
   }
@@ -111,10 +111,25 @@ class TypeArgumentCompletionProvider extends CompletionProvider<CompletionParame
       typeItems.add(PsiTypeLookupItem.createLookupItem(arg, context));
     }
 
-    boolean hasParameters = ConstructorInsertHandler.hasConstructorParameters(actualClass, context);
+    boolean hasParameters = hasConstructorParameters(actualClass, context);
     TypeArgsLookupElement element = new TypeArgsLookupElement(typeItems, globalTail, hasParameters);
     element.registerSingleClass(myInheritors);
     resultSet.addElement(element);
+  }
+
+  static boolean hasConstructorParameters(PsiClass psiClass, @NotNull PsiElement place) {
+    final PsiResolveHelper resolveHelper = JavaPsiFacade.getInstance(place.getProject()).getResolveHelper();
+    boolean hasParams = false;
+    for (PsiMethod constructor : psiClass.getConstructors()) {
+      if (!resolveHelper.isAccessible(constructor, place, null)) {
+        continue;
+      }
+      if (constructor.getParameterList().getParametersCount() > 0) {
+        hasParams = true;
+        break;
+      }
+    }
+    return hasParams;
   }
 
   @Nullable
