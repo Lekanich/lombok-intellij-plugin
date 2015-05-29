@@ -47,8 +47,8 @@
     <lombok.version>2.16.2.13</lombok.version>
     <lombok-pg.version>0.11.3</lombok-pg.version>
     <hrisey.version>0.1.1</hrisey.version>
-    <hamster.repository.id>internal</hamster.repository.id>
-    <hamster.repository.url>http://192.168.4.104:6080/repository/internal</hamster.repository.url>
+		<hamster.repository.id>internal</hamster.repository.id>
+		<hamster.repository.url>http://repu.huyaru.com/</hamster.repository.url>
   </properties>
 
   <dependencyManagement>
