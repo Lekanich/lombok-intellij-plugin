@@ -20,11 +20,13 @@ import com.intellij.codeInsight.ExpectedTypeInfo;
 import com.intellij.codeInsight.ExpectedTypesProvider;
 import com.intellij.codeInsight.TailType;
 import com.intellij.codeInsight.completion.util.ParenthesesInsertHandler;
+import com.intellij.codeInsight.lookup.Lookup;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementPresentation;
 import com.intellij.codeInsight.lookup.PsiTypeLookupItem;
 import com.intellij.codeInsight.lookup.TailTypeDecorator;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.*;
@@ -51,6 +53,111 @@ class TypeArgumentCompletionProviderEx extends CompletionProvider<CompletionPara
   private static final Logger LOG = Logger.getInstance("#com.intellij.codeInsight.completion.TypeArgumentCompletionProvider");
   private final boolean mySmart;
   @Nullable private final InheritorsHolder myInheritors;
+
+  public static class TypeArgsLookupElement extends LookupElement {
+    private String myLookupString;
+    private final List<PsiTypeLookupItem> myTypeItems;
+    private final TailType myGlobalTail;
+    private final boolean myHasParameters;
+
+    public TypeArgsLookupElement(List<PsiTypeLookupItem> typeItems, TailType globalTail, boolean hasParameters) {
+      myTypeItems = typeItems;
+      myGlobalTail = globalTail;
+      myHasParameters = hasParameters;
+      myLookupString = StringUtil.join(myTypeItems, new Function<PsiTypeLookupItem, String>() {
+        @Override
+        public String fun(PsiTypeLookupItem item) {
+          return item.getLookupString();
+        }
+      }, ", ");
+    }
+
+    @NotNull
+    @Override
+    public Object getObject() {
+      return myTypeItems.get(0).getObject();
+    }
+
+    public void registerSingleClass(@Nullable InheritorsHolder inheritors) {
+      if (inheritors != null && myTypeItems.size() == 1) {
+        PsiType type = myTypeItems.get(0).getPsiType();
+        PsiClass aClass = PsiUtil.resolveClassInClassTypeOnly(type);
+        if (aClass != null && !aClass.hasTypeParameters()) {
+          JavaCompletionUtil.setShowFQN(myTypeItems.get(0));
+          inheritors.registerClass(aClass);
+        }
+      }
+    }
+
+    @NotNull
+    @Override
+    public String getLookupString() {
+      return myLookupString;
+    }
+
+    @Override
+    public void renderElement(LookupElementPresentation presentation) {
+      myTypeItems.get(0).renderElement(presentation);
+      presentation.setItemText(getLookupString());
+      if (myTypeItems.size() > 1) {
+        presentation.setTailText(null);
+        presentation.setTypeText(null);
+      }
+    }
+
+    @Override
+    public void handleInsert(InsertionContext context) {
+      context.getDocument().deleteString(context.getStartOffset(), context.getTailOffset());
+      for (int i = 0; i < myTypeItems.size(); i++) {
+        PsiTypeLookupItem typeItem = myTypeItems.get(i);
+        emulateInsertion(context, context.getTailOffset(), typeItem);
+        if (context.getTailOffset() < 0) {
+          LOG.error("tail offset spoiled by " + typeItem);
+          return;
+        }
+        context.setTailOffset(getTail(i == myTypeItems.size() - 1).processTail(context.getEditor(), context.getTailOffset()));
+      }
+      context.setAddCompletionChar(false);
+
+      context.commitDocument();
+
+      PsiElement leaf = context.getFile().findElementAt(context.getTailOffset() - 1);
+      if (psiElement().withParents(PsiReferenceParameterList.class, PsiJavaCodeReferenceElement.class, PsiNewExpression.class)
+          .accepts(leaf)) {
+        ParenthesesInsertHandler.getInstance(myHasParameters).handleInsert(context, this);
+        myGlobalTail.processTail(context.getEditor(), context.getTailOffset());
+      }
+    }
+
+    static InsertionContext emulateInsertion(InsertionContext oldContext, int newStart, final LookupElement item) {
+      final InsertionContext newContext = newContext(oldContext, item);
+      CompletionUtil.emulateInsertion(item, newStart, newContext);
+      return newContext;
+    }
+
+    private static InsertionContext newContext(InsertionContext oldContext, LookupElement forElement) {
+      final Editor editor = oldContext.getEditor();
+      return new InsertionContext(new OffsetMap(editor.getDocument()), Lookup.AUTO_INSERT_SELECT_CHAR, new LookupElement[]{forElement}, oldContext.getFile(), editor,
+          oldContext.shouldAddCompletionChar());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      TypeArgsLookupElement element = (TypeArgsLookupElement)o;
+
+      if (!myTypeItems.equals(element.myTypeItems)) return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return myTypeItems.hashCode();
+    }
+  }
 
   TypeArgumentCompletionProviderEx(boolean smart, @Nullable InheritorsHolder inheritors) {
     mySmart = smart;
@@ -204,98 +311,5 @@ class TypeArgumentCompletionProviderEx extends CompletionProvider<CompletionPara
     if(typeParameters.length <= parameterIndex) return null;
 
     return Pair.create(referencedClass, parameterIndex);
-  }
-
-  public static class TypeArgsLookupElement extends LookupElement {
-    private String myLookupString;
-    private final List<PsiTypeLookupItem> myTypeItems;
-    private final TailType myGlobalTail;
-    private final boolean myHasParameters;
-
-    public TypeArgsLookupElement(List<PsiTypeLookupItem> typeItems, TailType globalTail, boolean hasParameters) {
-      myTypeItems = typeItems;
-      myGlobalTail = globalTail;
-      myHasParameters = hasParameters;
-      myLookupString = StringUtil.join(myTypeItems, new Function<PsiTypeLookupItem, String>() {
-        @Override
-        public String fun(PsiTypeLookupItem item) {
-          return item.getLookupString();
-        }
-      }, ", ");
-    }
-
-    @NotNull
-    @Override
-    public Object getObject() {
-      return myTypeItems.get(0).getObject();
-    }
-
-    public void registerSingleClass(@Nullable InheritorsHolder inheritors) {
-      if (inheritors != null && myTypeItems.size() == 1) {
-        PsiType type = myTypeItems.get(0).getPsiType();
-        PsiClass aClass = PsiUtil.resolveClassInClassTypeOnly(type);
-        if (aClass != null && !aClass.hasTypeParameters()) {
-          JavaCompletionUtil.setShowFQN(myTypeItems.get(0));
-          inheritors.registerClass(aClass);
-        }
-      }
-    }
-
-    @NotNull
-    @Override
-    public String getLookupString() {
-      return myLookupString;
-    }
-
-    @Override
-    public void renderElement(LookupElementPresentation presentation) {
-      myTypeItems.get(0).renderElement(presentation);
-      presentation.setItemText(getLookupString());
-      if (myTypeItems.size() > 1) {
-        presentation.setTailText(null);
-        presentation.setTypeText(null);
-      }
-    }
-
-    @Override
-    public void handleInsert(InsertionContext context) {
-      context.getDocument().deleteString(context.getStartOffset(), context.getTailOffset());
-      for (int i = 0; i < myTypeItems.size(); i++) {
-        PsiTypeLookupItem typeItem = myTypeItems.get(i);
-        CompletionUtil.emulateInsertion(context, context.getTailOffset(), typeItem);
-        if (context.getTailOffset() < 0) {
-          LOG.error("tail offset spoiled by " + typeItem);
-          return;
-        }
-        context.setTailOffset(getTail(i == myTypeItems.size() - 1).processTail(context.getEditor(), context.getTailOffset()));
-      }
-      context.setAddCompletionChar(false);
-
-      context.commitDocument();
-
-      PsiElement leaf = context.getFile().findElementAt(context.getTailOffset() - 1);
-      if (psiElement().withParents(PsiReferenceParameterList.class, PsiJavaCodeReferenceElement.class, PsiNewExpression.class)
-        .accepts(leaf)) {
-        ParenthesesInsertHandler.getInstance(myHasParameters).handleInsert(context, this);
-        myGlobalTail.processTail(context.getEditor(), context.getTailOffset());
-      }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-
-      TypeArgsLookupElement element = (TypeArgsLookupElement)o;
-
-      if (!myTypeItems.equals(element.myTypeItems)) return false;
-
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      return myTypeItems.hashCode();
-    }
   }
 }
