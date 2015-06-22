@@ -18,7 +18,6 @@ import de.plushnikov.intellij.plugin.psi.LombokLightMethodBuilder;
 import de.plushnikov.intellij.plugin.quickfix.PsiQuickFixFactory;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
-import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -70,8 +69,8 @@ public class EqualsAndHashCodeProcessor extends AbstractClassProcessor {
   }
 
   protected void validateCallSuperParamForObject(PsiAnnotation psiAnnotation, PsiClass psiClass, ProblemBuilder builder) {
-    Boolean callSuperProperty = PsiAnnotationUtil.getAnnotationValue(psiAnnotation, "callSuper", Boolean.class);
-    if (null != callSuperProperty && callSuperProperty && !PsiClassUtil.hasSuperClass(psiClass)) {
+    boolean callSuperProperty = PsiAnnotationUtil.getBooleanAnnotationValue(psiAnnotation, "callSuper", false);
+    if (callSuperProperty && !PsiClassUtil.hasSuperClass(psiClass)) {
       builder.addError("Generating equals/hashCode with a supercall to java.lang.Object is pointless.",
           PsiQuickFixFactory.createChangeAnnotationParameterFix(psiAnnotation, "callSuper", "false"),
           PsiQuickFixFactory.createChangeAnnotationParameterFix(psiAnnotation, "callSuper", null));
@@ -115,9 +114,6 @@ public class EqualsAndHashCodeProcessor extends AbstractClassProcessor {
     if (shouldGenerateCanEqual && !PsiMethodUtil.hasMethodByName(classMethods, CAN_EQUAL_METHOD_NAME)) {
       result.add(createCanEqualMethod(psiClass, psiAnnotation));
     }
-
-    Collection<PsiField> equalsAndHashCodeFields = PsiFieldUtil.filterFieldsByModifiers(psiClass.getFields(), PsiModifier.STATIC, PsiModifier.TRANSIENT);
-
     return result;
   }
 
@@ -178,7 +174,7 @@ public class EqualsAndHashCodeProcessor extends AbstractClassProcessor {
   }
 
   private String createEqualsBlockString(@NotNull PsiClass psiClass, @NotNull PsiAnnotation psiAnnotation, boolean hasCanEqualMethod) {
-    final boolean callSuper = PsiAnnotationUtil.getAnnotationValue(psiAnnotation, "callSuper", Boolean.class, Boolean.FALSE);
+    final boolean callSuper = PsiAnnotationUtil.getBooleanAnnotationValue(psiAnnotation, "callSuper", false);
     final boolean doNotUseGetters = readAnnotationOrConfigProperty(psiAnnotation, psiClass, "doNotUseGetters", ConfigKeys.EQUALSANDHASHCODE_DO_NOT_USE_GETTERS);
 
     final String psiClassName = psiClass.getName();
@@ -237,8 +233,8 @@ public class EqualsAndHashCodeProcessor extends AbstractClassProcessor {
   private static final int PRIME_FOR_FALSE = 97;
 
   private String createHashcodeBlockString(@NotNull PsiClass psiClass, @NotNull PsiAnnotation psiAnnotation) {
-    final boolean callSuper = PsiAnnotationUtil.getAnnotationValue(psiAnnotation, "callSuper", Boolean.class, Boolean.FALSE);
-    final boolean doNotUseGetters = PsiAnnotationUtil.getAnnotationValue(psiAnnotation, "doNotUseGetters", Boolean.class, Boolean.FALSE);
+    final boolean callSuper = PsiAnnotationUtil.getBooleanAnnotationValue(psiAnnotation, "callSuper", false);
+    final boolean doNotUseGetters = PsiAnnotationUtil.getBooleanAnnotationValue(psiAnnotation, "doNotUseGetters", false);
 
     final StringBuilder builder = StringBuilderSpinAllocator.alloc();
     try {

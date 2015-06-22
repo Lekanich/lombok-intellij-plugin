@@ -61,7 +61,7 @@ public abstract class AbstractConstructorClassProcessor extends AbstractClassPro
   }
 
   protected boolean validateVisibility(@NotNull PsiAnnotation psiAnnotation) {
-    final String visibility = LombokProcessorUtil.getAccessVisibity(psiAnnotation);
+    final String visibility = LombokProcessorUtil.getAccessVisibility(psiAnnotation);
     return null != visibility;
   }
 
@@ -125,6 +125,7 @@ public abstract class AbstractConstructorClassProcessor extends AbstractClassPro
   }
 
   @NotNull
+  @SuppressWarnings("deprecation")
   protected Collection<PsiField> getAllNotInitializedAndNotStaticFields(@NotNull PsiClass psiClass) {
     Collection<PsiField> allNotInitializedNotStaticFields = new ArrayList<PsiField>();
     final boolean classAnnotatedWithValue = PsiAnnotationUtil.isAnnotatedWith(psiClass, Value.class, lombok.experimental.Value.class);
@@ -165,7 +166,7 @@ public abstract class AbstractConstructorClassProcessor extends AbstractClassPro
   }
 
   protected String getStaticConstructorName(@NotNull PsiAnnotation psiAnnotation) {
-    return PsiAnnotationUtil.getAnnotationValue(psiAnnotation, "staticName", String.class);
+    return PsiAnnotationUtil.getStringAnnotationValue(psiAnnotation, "staticName");
   }
 
   protected boolean isStaticConstructor(@Nullable String staticName) {

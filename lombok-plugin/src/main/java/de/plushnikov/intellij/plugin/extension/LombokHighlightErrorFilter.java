@@ -27,7 +27,6 @@ import lombok.experimental.FieldDefaults;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.siyeh.ig.psiutils.ClassUtils.getContainingClass;
@@ -49,10 +48,9 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
     }
 
     if (HighlightSeverity.ERROR.equals(highlightInfo.getSeverity())) {
-      final String description = StringUtil.notNullize(highlightInfo.getDescription());
 
       // Handling LazyGetter
-      if (uninitializedField(description) && LazyGetterHandler.isLazyGetterHandled(highlightInfo, file)) {
+      if (uninitializedField(highlightInfo.getDescription()) && LazyGetterHandler.isLazyGetterHandled(highlightInfo, file)) {
         return false;
       }
       if (HighlightInfoType.WRONG_REF.equals(highlightInfo.type)) {
@@ -139,7 +137,6 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
   }
 
   private boolean uninitializedField(String description) {
-    Matcher matcher = UNINITIALIZED_MESSAGE.matcher(description);
-    return matcher.matches();
+    return UNINITIALIZED_MESSAGE.matcher(StringUtil.notNullize(description)).matches();
   }
 }

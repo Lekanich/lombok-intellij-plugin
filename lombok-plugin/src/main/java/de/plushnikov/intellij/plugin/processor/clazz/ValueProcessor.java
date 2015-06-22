@@ -66,6 +66,7 @@ public class ValueProcessor extends AbstractClassProcessor {
     return result;
   }
 
+  @SuppressWarnings("deprecation")
   protected void generatePsiElements(@NotNull PsiClass psiClass, @NotNull PsiAnnotation psiAnnotation, @NotNull List<? super PsiElement> target) {
     //TODO add support for final Modifier on class
     /*//@Value class are final
@@ -84,14 +85,15 @@ public class ValueProcessor extends AbstractClassProcessor {
       target.addAll(new ToStringProcessor().createToStringMethod(psiClass, psiAnnotation));
     }
     // create required constructor only if there are no other constructor annotations
-    if (PsiAnnotationUtil.isNotAnnotatedWith(psiClass, NoArgsConstructor.class, RequiredArgsConstructor.class, AllArgsConstructor.class, Builder.class)) {
+    if (PsiAnnotationUtil.isNotAnnotatedWith(psiClass, NoArgsConstructor.class, RequiredArgsConstructor.class, AllArgsConstructor.class,
+        lombok.experimental.Builder.class, lombok.Builder.class)) {
       final Collection<PsiMethod> definedConstructors = PsiClassUtil.collectClassConstructorIntern(psiClass);
       filterToleratedElements(definedConstructors);
       // and only if there are no any other constructors!
       if (definedConstructors.isEmpty()) {
         final AllArgsConstructorProcessor allArgsConstructorProcessor = new AllArgsConstructorProcessor();
 
-        final String staticName = PsiAnnotationUtil.getAnnotationValue(psiAnnotation, "staticConstructor", String.class);
+        final String staticName = PsiAnnotationUtil.getStringAnnotationValue(psiAnnotation, "staticConstructor");
         final Collection<PsiField> requiredFields = allArgsConstructorProcessor.getAllFields(psiClass);
 
         if (allArgsConstructorProcessor.validateIsConstructorDefined(psiClass, staticName, requiredFields, ProblemEmptyBuilder.getInstance())) {

@@ -48,8 +48,12 @@ public class BuilderTest extends LombokParsingTestCase {
     doTest();
   }
 
+  public void testBuilderAndAllArgsConstructor() throws IOException {
+    doTest();
+  }
+
 //  TODO fixme
-//  public void testBuilderMethodException() throws IOException {
-//    doTest();
-//  }
+public void testBuilderMethodException() throws IOException {
+  doTest();
+}
 }
