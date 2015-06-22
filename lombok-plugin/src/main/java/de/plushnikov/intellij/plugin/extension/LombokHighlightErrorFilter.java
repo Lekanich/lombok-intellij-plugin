@@ -77,7 +77,7 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
     boolean isUses = search.iterator().hasNext();                                                 // find some uses
     if (!isUses) return true;                                                                     // remain info
 
-    String level = PsiAnnotationUtil.getAnnotationValue(annotation, "level", String.class);
+    String level = PsiAnnotationUtil.getStringAnnotationValue(annotation, "level");
     if (level == null) return true;
 
     AccessLevel accessLevel = AccessLevel.valueOf(level);

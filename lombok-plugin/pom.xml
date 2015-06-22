@@ -21,8 +21,8 @@
       <artifactId>lombok</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.github.peichhorn</groupId>
-      <artifactId>lombok-pg</artifactId>
+        <groupId>pl.mg6.hrisey</groupId>
+        <artifactId>hrisey</artifactId>
     </dependency>
 
     <dependency>

@@ -308,7 +308,7 @@ final public class FieldDefaultsUtil {
     PsiAnnotation annotation = findAnnotation(field.getContainingClass(), FieldDefaults.class.getCanonicalName());
 
     if (!field.hasModifierProperty(PsiModifier.PUBLIC) && !field.hasModifierProperty(PsiModifier.PRIVATE) && !field.hasModifierProperty(PsiModifier.PROTECTED) && annotation != null) {
-      String access = LombokProcessorUtil.convertAccessLevelToJavaString(PsiAnnotationUtil.getAnnotationValue(annotation, "level", String.class));
+      String access = LombokProcessorUtil.convertAccessLevelToJavaModifier(PsiAnnotationUtil.getStringAnnotationValue(annotation, "level"));
 
       if (!"".equals(access)) {
         List<String> modifiers = new ArrayList<String>(2){{ add(access); }};

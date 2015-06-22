@@ -14,9 +14,9 @@ import lombok.experimental.FieldDefaults;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import static de.plushnikov.intellij.plugin.util.LombokProcessorUtil.convertAccessLevelToJavaString;
+import static de.plushnikov.intellij.plugin.util.LombokProcessorUtil.convertAccessLevelToJavaModifier;
 import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.findAnnotation;
-import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.getAnnotationValue;
+import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.getStringAnnotationValue;
 
 /**
  * For additional use scope for {@code lombok.experimental.FieldDefaults}
@@ -50,8 +50,8 @@ final public class LombokUseScopeEnlarger extends UseScopeEnlarger {
         return element.getContainingFile();
       }
     };
-    String level = getAnnotationValue(annotation, "level", String.class);
-    String accessLevelToJavaString = convertAccessLevelToJavaString(level);
+    String level = getStringAnnotationValue(annotation, "level");
+    String accessLevelToJavaString = convertAccessLevelToJavaModifier(level);
     if (accessLevelToJavaString != null) fieldWithLombokAccess.withModifier(accessLevelToJavaString);
     fieldWithLombokAccess.setContainingClass((field.getContainingClass()));
     if (field.hasModifierProperty(PsiModifier.STATIC)) fieldWithLombokAccess.withModifier(PsiModifier.STATIC);            // todo I think this doesn't need

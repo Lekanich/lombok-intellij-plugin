@@ -29,7 +29,7 @@ public class LombokProcessorUtil {
   }
 
   @Nullable
-  private static String convertAccessLevelToJavaModifier(String value) {
+  public static String convertAccessLevelToJavaModifier(String value) {
     if (null == value || value.isEmpty() || "PUBLIC".equals(value)) {
       return PsiModifier.PUBLIC;
     }

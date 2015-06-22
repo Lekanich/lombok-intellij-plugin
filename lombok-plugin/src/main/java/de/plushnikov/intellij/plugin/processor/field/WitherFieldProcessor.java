@@ -89,7 +89,7 @@ public class WitherFieldProcessor extends AbstractFieldProcessor {
   }
 
   private boolean validNonFinalInitialized(@NotNull PsiField psiField, @NotNull ProblemBuilder builder) {
-    if (PsiFieldUtil.isFinal(classField) && psiField.getInitializer() != null){
+    if (PsiFieldUtil.isFinal(psiField) && psiField.getInitializer() != null){
       builder.addWarning("Not generating wither for this field: Withers cannot be generated for final, initialized fields.",
           PsiQuickFixFactory.createModifierListFix(psiField, PsiModifier.FINAL, false, false));
       return false;

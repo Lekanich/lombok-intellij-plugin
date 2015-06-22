@@ -25,7 +25,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.findAnnotation;
-import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.getAnnotationValue;
 import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.isAnnotatedWith;
 
 /**
@@ -75,7 +74,7 @@ public class PsiFieldUtil {
     PsiAnnotation annotation = findAnnotation(containingClass, FieldDefaults.class);
     if (annotation == null) return false;
 
-    Boolean makeFinal = getAnnotationValue(annotation, "makeFinal", Boolean.class);
-    return makeFinal != null ? makeFinal : variable.hasModifierProperty(PsiModifier.FINAL);       // if couldn't find annotation value get really final modifier of field
+// if couldn't find annotation value get really final modifier of field
+    return PsiAnnotationUtil.getBooleanAnnotationValue(annotation, "makeFinal", variable.hasModifierProperty(PsiModifier.FINAL));
   }
 }
