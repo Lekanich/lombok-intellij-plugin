@@ -84,8 +84,7 @@ public class GetterFieldProcessor extends AbstractFieldProcessor {
   }
 
   protected boolean isLazyGetter(@NotNull PsiAnnotation psiAnnotation) {
-    final Boolean lazyObj = PsiAnnotationUtil.getAnnotationValue(psiAnnotation, "lazy", Boolean.class);
-    return null != lazyObj && lazyObj;
+    return PsiAnnotationUtil.getBooleanAnnotationValue(psiAnnotation, "lazy", false);
   }
 
   protected boolean validateExistingMethods(@NotNull PsiField psiField, @NotNull ProblemBuilder builder) {
@@ -93,12 +92,13 @@ public class GetterFieldProcessor extends AbstractFieldProcessor {
     final PsiClass psiClass = psiField.getContainingClass();
     if (null != psiClass) {
       final boolean isBoolean = PsiType.BOOLEAN.equals(psiField.getType());
-      final Collection<String> methodNames = LombokUtils.toAllGetterNames(psiField.getName(), isBoolean);
+      final AccessorsInfo accessorsInfo = AccessorsInfo.build(psiField);
+      final Collection<String> methodNames = LombokUtils.toAllGetterNames(accessorsInfo, psiField.getName(), isBoolean);
       final Collection<PsiMethod> classMethods = PsiClassUtil.collectClassMethodsIntern(psiClass);
 
       for (String methodName : methodNames) {
         if (PsiMethodUtil.hasSimilarMethod(classMethods, methodName, 0)) {
-          final String setterMethodName = LombokUtils.toGetterName(psiField.getName(), isBoolean);
+          final String setterMethodName = getGetterName(psiField);
 
           builder.addWarning("Not generated '%s'(): A method with similar name '%s' already exists", setterMethodName, methodName);
           result = false;
@@ -119,7 +119,7 @@ public class GetterFieldProcessor extends AbstractFieldProcessor {
 
   @NotNull
   public PsiMethod createGetterMethod(@NotNull PsiField psiField, @NotNull PsiClass psiClass, @NotNull String methodModifier) {
-    final String methodName = getGetterName(psiField, psiClass);
+    final String methodName = getGetterName(psiField);
 
     LombokLightMethodBuilder method = new LombokLightMethodBuilder(psiField.getManager(), methodName)
         .withMethodReturnType(psiField.getType())

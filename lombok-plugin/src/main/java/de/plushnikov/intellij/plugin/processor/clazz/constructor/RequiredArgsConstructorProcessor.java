@@ -44,7 +44,7 @@ public class RequiredArgsConstructorProcessor extends AbstractConstructorClassPr
   }
 
   protected void generatePsiElements(@NotNull PsiClass psiClass, @NotNull PsiAnnotation psiAnnotation, @NotNull List<? super PsiElement> target) {
-    final String methodVisibility = LombokProcessorUtil.getAccessVisibity(psiAnnotation);
+    final String methodVisibility = LombokProcessorUtil.getAccessVisibility(psiAnnotation);
     if (null != methodVisibility) {
       final Collection<PsiField> allReqFields = getRequiredFields(psiClass);
       target.addAll(createConstructorMethod(psiClass, methodVisibility, psiAnnotation, allReqFields));
@@ -59,6 +59,7 @@ public class RequiredArgsConstructorProcessor extends AbstractConstructorClassPr
   }
 
   @NotNull
+  @SuppressWarnings("deprecation")
   public Collection<PsiField> getRequiredFields(@NotNull PsiClass psiClass) {
     Collection<PsiField> result = new ArrayList<PsiField>();
     final boolean classAnnotatedWithValue = PsiAnnotationUtil.isAnnotatedWith(psiClass, Value.class, lombok.experimental.Value.class);

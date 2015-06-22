@@ -1,7 +1,6 @@
 package de.plushnikov.intellij.plugin.util;
 
 import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiKeyword;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiModifierListOwner;
@@ -21,60 +20,32 @@ public class LombokProcessorUtil {
 
   @Nullable
   public static String getMethodModifier(@NotNull PsiAnnotation psiAnnotation) {
-    return convertAccessLevelToJavaModifier(getAnnotationValue(psiAnnotation, "value"));
+    return convertAccessLevelToJavaModifier(PsiAnnotationUtil.getStringAnnotationValue(psiAnnotation, "value"));
   }
 
   @Nullable
-  public static String getAccessVisibity(@NotNull PsiAnnotation psiAnnotation) {
-    return convertAccessLevelToJavaString(getAnnotationValue(psiAnnotation, "access"));
-  }
-
-  private static String getAnnotationValue(final PsiAnnotation psiAnnotation, final String parameterName) {
-    return PsiAnnotationUtil.getAnnotationValue(psiAnnotation, parameterName, String.class);
-  }
-
-  @Nullable
-  public static String convertAccessLevelToJavaString(String value) {
-    if (null == value || value.isEmpty() || value.equals("PUBLIC")) {
-      return PsiKeyword.PUBLIC;
-    }
-    if (value.equals("MODULE")) {
-      return "";
-    }
-    if (value.equals("PROTECTED")) {
-      return PsiKeyword.PROTECTED;
-    }
-    if (value.equals("PACKAGE")) {
-      return "";
-    }
-    if (value.equals("PRIVATE")) {
-      return PsiKeyword.PRIVATE;
-    }
-    if (value.equals("NONE")) {
-      return null;
-    } else {
-      return null;
-    }
+  public static String getAccessVisibility(@NotNull PsiAnnotation psiAnnotation) {
+    return convertAccessLevelToJavaModifier(PsiAnnotationUtil.getStringAnnotationValue(psiAnnotation, "access"));
   }
 
   @Nullable
   private static String convertAccessLevelToJavaModifier(String value) {
-    if (null == value || value.isEmpty() || value.equals("PUBLIC")) {
+    if (null == value || value.isEmpty() || "PUBLIC".equals(value)) {
       return PsiModifier.PUBLIC;
     }
-    if (value.equals("MODULE")) {
+    if ("MODULE".equals(value)) {
       return PsiModifier.PACKAGE_LOCAL;
     }
-    if (value.equals("PROTECTED")) {
+    if ("PROTECTED".equals(value)) {
       return PsiModifier.PROTECTED;
     }
-    if (value.equals("PACKAGE")) {
+    if ("PACKAGE".equals(value)) {
       return PsiModifier.PACKAGE_LOCAL;
     }
-    if (value.equals("PRIVATE")) {
+    if ("PRIVATE".equals(value)) {
       return PsiModifier.PRIVATE;
     }
-    if (value.equals("NONE")) {
+    if ("NONE".equals(value)) {
       return null;
     } else {
       return null;
@@ -105,9 +76,6 @@ public class LombokProcessorUtil {
     map.put(PsiModifier.PACKAGE_LOCAL, AccessLevel.PACKAGE);
     map.put(PsiModifier.PROTECTED, AccessLevel.PROTECTED);
     map.put(PsiModifier.PRIVATE, AccessLevel.PRIVATE);
-
-//    map.put(PsiModifier.PACKAGE_LOCAL, AccessLevel.MODULE);
-//    map.put(PsiModifier.PRIVATE, AccessLevel.NONE);
     return map.get(psiModifier);
   }
 }

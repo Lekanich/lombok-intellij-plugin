@@ -84,7 +84,7 @@ public abstract class AbstractClassProcessor extends AbstractProcessor implement
   protected abstract void generatePsiElements(@NotNull PsiClass psiClass, @NotNull PsiAnnotation psiAnnotation, @NotNull List<? super PsiElement> target);
 
   protected void validateCallSuperParam(PsiAnnotation psiAnnotation, PsiClass psiClass, ProblemBuilder builder, String generatedMethodName) {
-    Boolean callSuperProperty = PsiAnnotationUtil.getDeclaredAnnotationValue(psiAnnotation, "callSuper", Boolean.class);
+    Boolean callSuperProperty = PsiAnnotationUtil.getDeclaredBooleanAnnotationValue(psiAnnotation, "callSuper");
     if (null == callSuperProperty && PsiClassUtil.hasSuperClass(psiClass)) {
       builder.addWarning("Generating " + generatedMethodName + " implementation but without a call to superclass, " +
           "even though this class does not extend java.lang.Object." +
@@ -179,7 +179,7 @@ public abstract class AbstractClassProcessor extends AbstractProcessor implement
     if (doNotUseGetters) {
       return fieldName;
     } else {
-      final String getterName = getGetterName(classField, psiClass);
+      final String getterName = getGetterName(classField);
 
       boolean hasGetter = PsiMethodUtil.hasMethodByName(PsiClassUtil.collectClassMethodsIntern(psiClass), getterName);
 

@@ -7,16 +7,17 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.psi.JavaElementVisitor;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiElementVisitor;
-import com.intellij.psi.PsiReferenceExpression;
+import com.intellij.psi.PsiTypeElement;
 import de.plushnikov.intellij.plugin.extension.LombokProcessorExtensionPoint;
 import de.plushnikov.intellij.plugin.problem.LombokProblem;
 import de.plushnikov.intellij.plugin.processor.Processor;
-import gnu.trove.THashMap;
+import de.plushnikov.intellij.plugin.processor.ValProcessor;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
@@ -28,8 +29,12 @@ public class LombokInspection extends BaseJavaLocalInspectionTool {
 
   private final Map<String, Collection<Processor>> allProblemHandlers;
 
+  private final ValProcessor valProcessor;
+
   public LombokInspection() {
-    allProblemHandlers = new THashMap<String, Collection<Processor>>();
+    valProcessor = new ValProcessor();
+
+    allProblemHandlers = new HashMap<String, Collection<Processor>>();
     for (Processor lombokInspector : LombokProcessorExtensionPoint.EP_NAME.getExtensions()) {
       Collection<Processor> inspectorCollection = allProblemHandlers.get(lombokInspector.getSupportedAnnotation());
       if (null == inspectorCollection) {
@@ -68,29 +73,40 @@ public class LombokInspection extends BaseJavaLocalInspectionTool {
   @NotNull
   @Override
   public PsiElementVisitor buildVisitor(@NotNull final ProblemsHolder holder, final boolean isOnTheFly) {
-    return new JavaElementVisitor() {
-      @Override
-      public void visitReferenceExpression(PsiReferenceExpression expression) {
-        // do nothing, just implement
-      }
+    return new LombokElementVisitor(holder);
+  }
 
-      @Override
-      public void visitAnnotation(PsiAnnotation annotation) {
-        super.visitAnnotation(annotation);
+  private class LombokElementVisitor extends JavaElementVisitor {
 
-        final String qualifiedName = annotation.getQualifiedName();
-        if (StringUtils.isNotBlank(qualifiedName) && allProblemHandlers.containsKey(qualifiedName)) {
-          final Collection<LombokProblem> problems = new HashSet<LombokProblem>();
+    private final ProblemsHolder holder;
 
-          for (Processor inspector : allProblemHandlers.get(qualifiedName)) {
-            problems.addAll(inspector.verifyAnnotation(annotation));
-          }
+    public LombokElementVisitor(ProblemsHolder holder) {
+      this.holder = holder;
+    }
 
-          for (LombokProblem problem : problems) {
-            holder.registerProblem(annotation, problem.getMessage(), problem.getHighlightType(), problem.getQuickFixes());
-          }
+    @Override
+    public void visitTypeElement(PsiTypeElement type) {
+      super.visitTypeElement(type);
+
+      valProcessor.verifyTypeElement(type, holder);
+    }
+
+    @Override
+    public void visitAnnotation(PsiAnnotation annotation) {
+      super.visitAnnotation(annotation);
+
+      final String qualifiedName = annotation.getQualifiedName();
+      if (StringUtils.isNotBlank(qualifiedName) && allProblemHandlers.containsKey(qualifiedName)) {
+        final Collection<LombokProblem> problems = new HashSet<LombokProblem>();
+
+        for (Processor inspector : allProblemHandlers.get(qualifiedName)) {
+          problems.addAll(inspector.verifyAnnotation(annotation));
+        }
+
+        for (LombokProblem problem : problems) {
+          holder.registerProblem(annotation, problem.getMessage(), problem.getHighlightType(), problem.getQuickFixes());
         }
       }
-    };
+    }
   }
 }
