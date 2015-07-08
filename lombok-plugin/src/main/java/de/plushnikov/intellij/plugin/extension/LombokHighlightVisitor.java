@@ -1,9 +1,14 @@
 package de.plushnikov.intellij.plugin.extension;
 
+import com.intellij.codeInsight.daemon.JavaErrorMessages;
 import com.intellij.codeInsight.daemon.impl.CheckLevelHighlightInfoHolder;
+import com.intellij.codeInsight.daemon.impl.HighlightInfo;
+import com.intellij.codeInsight.daemon.impl.HighlightInfoType;
 import com.intellij.codeInsight.daemon.impl.HighlightVisitor;
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightControlFlowUtil;
 import com.intellij.codeInsight.daemon.impl.analysis.HighlightInfoHolder;
+import com.intellij.codeInsight.daemon.impl.quickfix.QuickFixAction;
+import com.intellij.codeInsight.intention.QuickFixFactory;
 import com.intellij.lang.injection.InjectedLanguageManager;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.progress.ProgressManager;
@@ -30,6 +35,7 @@ import de.plushnikov.intellij.plugin.handler.FieldDefaultsUtil;
 import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -114,10 +120,21 @@ final public class LombokHighlightVisitor extends JavaElementVisitor implements 
           myHolder.add(HighlightControlFlowUtil.checkFinalVariableMightAlreadyHaveBeenAssignedTo((PsiVariable) resolved, expression, myFinalVarProblems));
         }
         if (!myHolder.hasErrorResults()) {
-          myHolder.add(HighlightControlFlowUtil.checkFinalVariableInitializedInLoop(expression, resolved));
+          myHolder.add(checkFinalVariableInitializedInLoop(expression, resolved));
         }
       }
     }
+  }
+
+  @Nullable
+  public static HighlightInfo checkFinalVariableInitializedInLoop(@NotNull PsiReferenceExpression expression, @NotNull PsiElement resolved) {
+    if (ControlFlowUtil.isVariableAssignedInLoop(expression, resolved)) {
+      String description = JavaErrorMessages.message("variable.assigned.in.loop", ((PsiVariable) resolved).getName());
+      final HighlightInfo highlightInfo = HighlightInfo.newHighlightInfo(HighlightInfoType.ERROR).range(expression).descriptionAndTooltip(description).create();
+      QuickFixAction.registerQuickFixAction(highlightInfo, QuickFixFactory.getInstance().createModifierListFix((PsiVariable) resolved, PsiModifier.FINAL, false, false));
+      return highlightInfo;
+    }
+    return null;
   }
 
   @Override
