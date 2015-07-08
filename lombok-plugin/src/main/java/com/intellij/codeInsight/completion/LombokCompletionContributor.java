@@ -140,7 +140,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     }});
 
   static {
-    ourCompletionData = new LinkedHashMap<LanguageLevel, JavaCompletionData>();
+    ourCompletionData = new LinkedHashMap<>();
     ourCompletionData.put(LanguageLevel.JDK_1_8, new Java18CompletionData());
     ourCompletionData.put(LanguageLevel.JDK_1_5, new Java15CompletionData());
     ourCompletionData.put(LanguageLevel.JDK_1_3, new JavaCompletionData());
@@ -267,6 +267,10 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
       }.addCompletions(parameters, new ProcessingContext(), result);
     }
 
+    if (LAMBDA.accepts(parameters.getPosition())) {
+      result.addAllElements(FunctionalExpressionCompletionProvider.getLambdaVariants(parameters, true));
+    }
+
     PrefixMatcher matcher = result.getPrefixMatcher();
     if (JavaSmartCompletionContributor.AFTER_NEW.accepts(position)) {
       new JavaInheritorsGetter(ConstructorInsertHandler.BASIC_INSTANCE).generateVariants(parameters, matcher, inheritors);
@@ -288,15 +292,6 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     }
 
     JavaGenerateMemberCompletionContributor.fillCompletionVariants(parameters, result);
-
-    if (LAMBDA.accepts(parameters.getPosition())) {
-      new LambdaCompletionProvider() {
-        @Override
-        public void addCompletions(@NotNull CompletionParameters parameters, ProcessingContext context, @NotNull CompletionResultSet result) {
-          super.addCompletions(parameters, context, result);
-        }
-      }.addCompletions(parameters, new ProcessingContext(), result);
-    }
 
     addAllClasses(parameters, result, inheritors);
 

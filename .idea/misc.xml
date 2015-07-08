@@ -41,7 +41,7 @@
   <component name="ProjectKey">
     <option name="state" value="https://github.com/mplushnikov/lombok-intellij-plugin.git" />
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" default="false" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA jdk" project-jdk-type="IDEA JDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" default="false" assert-keyword="true" jdk-15="true" project-jdk-name="IDEA 15" project-jdk-type="IDEA JDK">
     <output url="file://$PROJECT_DIR$/lombok-plugin/target" />
   </component>
   <component name="SvnBranchConfigurationManager">
