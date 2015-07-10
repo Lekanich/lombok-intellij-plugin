@@ -3,13 +3,19 @@ package com.intellij.codeInsight.completion;
 import com.intellij.codeInsight.ExpectedTypeInfo;
 import com.intellij.codeInsight.TailType;
 import com.intellij.codeInsight.completion.scope.JavaCompletionProcessor;
+import com.intellij.codeInsight.generation.GenerateMembersUtil;
+import com.intellij.codeInsight.lookup.AutoCompletionPolicy;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.codeInsight.lookup.LookupItem;
 import com.intellij.codeInsight.lookup.LookupItemUtil;
 import com.intellij.codeInsight.lookup.TailTypeDecorator;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.EditorModificationUtil;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.Condition;
 import com.intellij.openapi.util.text.StringUtil;
@@ -20,6 +26,9 @@ import com.intellij.patterns.PsiElementPattern;
 import com.intellij.patterns.PsiJavaElementPattern;
 import com.intellij.patterns.PsiNameValuePairPattern;
 import com.intellij.pom.java.LanguageLevel;
+import com.intellij.psi.JVMElementFactories;
+import com.intellij.psi.JVMElementFactory;
+import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.JavaTokenType;
 import com.intellij.psi.LambdaUtil;
 import com.intellij.psi.PsiAnnotation;
@@ -39,20 +48,25 @@ import com.intellij.psi.PsiJavaCodeReferenceElement;
 import com.intellij.psi.PsiJavaReference;
 import com.intellij.psi.PsiJavaToken;
 import com.intellij.psi.PsiKeyword;
+import com.intellij.psi.PsiLambdaExpression;
 import com.intellij.psi.PsiLiteralExpression;
 import com.intellij.psi.PsiLocalVariable;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiNameValuePair;
+import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiQualifiedExpression;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiReferenceParameterList;
+import com.intellij.psi.PsiSubstitutor;
 import com.intellij.psi.PsiSuperExpression;
 import com.intellij.psi.PsiSwitchLabelStatement;
 import com.intellij.psi.PsiSwitchStatement;
 import com.intellij.psi.PsiThisExpression;
 import com.intellij.psi.PsiType;
+import com.intellij.psi.codeStyle.CodeStyleManager;
+import com.intellij.psi.codeStyle.JavaCodeStyleManager;
 import com.intellij.psi.filters.AndFilter;
 import com.intellij.psi.filters.ClassFilter;
 import com.intellij.psi.filters.ElementExtractorFilter;
@@ -62,13 +76,18 @@ import com.intellij.psi.filters.TrueFilter;
 import com.intellij.psi.filters.element.ModifierFilter;
 import com.intellij.psi.filters.getters.JavaMembersGetter;
 import com.intellij.psi.impl.source.PsiLabelReference;
+import com.intellij.psi.impl.source.resolve.JavaResolveUtil;
+import com.intellij.psi.impl.source.resolve.graphInference.FunctionalInterfaceParameterizationUtil;
 import com.intellij.psi.scope.ElementClassFilter;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.PsiUtil;
+import com.intellij.psi.util.TypeConversionUtil;
+import com.intellij.util.Function;
 import com.intellij.util.ObjectUtils;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ProcessingContext;
+import com.intellij.util.containers.ContainerUtil;
 import com.siyeh.ig.psiutils.ClassUtils;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import lombok.experimental.FieldDefaults;
@@ -78,6 +97,7 @@ import org.jetbrains.annotations.Nullable;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -268,7 +288,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     }
 
     if (LAMBDA.accepts(parameters.getPosition())) {
-      result.addAllElements(FunctionalExpressionCompletionProvider.getLambdaVariants(parameters, true));
+      result.addAllElements(getLambdaVariants(parameters, true));
     }
 
     PrefixMatcher matcher = result.getPrefixMatcher();
@@ -300,6 +320,95 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
       new JavaStaticMemberProcessor(parameters).processStaticMethodsGlobally(matcher, result);
     }
     result.stopHere();
+  }
+
+  static List<LookupElement> getLambdaVariants(@NotNull CompletionParameters parameters, boolean prioritize) {
+    if (!PsiUtil.isLanguageLevel8OrHigher(parameters.getOriginalFile())) return Collections.emptyList();
+
+    List<LookupElement> result = ContainerUtil.newArrayList();
+    for (ExpectedTypeInfo expectedType : JavaSmartCompletionContributor.getExpectedTypes(parameters)) {
+      final PsiType defaultType = expectedType.getDefaultType();
+      if (LambdaUtil.isFunctionalType(defaultType)) {
+        final PsiType functionalInterfaceType = FunctionalInterfaceParameterizationUtil.getGroundTargetType(defaultType);
+        final PsiMethod functionalInterfaceMethod = LambdaUtil.getFunctionalInterfaceMethod(functionalInterfaceType);
+        if (functionalInterfaceMethod != null) {
+          PsiParameter[] params = new PsiParameter[0];
+          final PsiElement originalPosition = parameters.getPosition();
+          final PsiSubstitutor substitutor = LambdaUtil.getSubstitutor(functionalInterfaceMethod, PsiUtil.resolveGenericsClassInType(functionalInterfaceType));
+          if (!functionalInterfaceMethod.hasTypeParameters()) {
+            params = functionalInterfaceMethod.getParameterList().getParameters();
+            final Project project = functionalInterfaceMethod.getProject();
+            final JVMElementFactory jvmElementFactory = JVMElementFactories.getFactory(originalPosition.getLanguage(), project);
+            final JavaCodeStyleManager javaCodeStyleManager = JavaCodeStyleManager.getInstance(project);
+            if (jvmElementFactory != null) {
+              params = GenerateMembersUtil.overriddenParameters(params, jvmElementFactory, javaCodeStyleManager, substitutor, originalPosition);
+            }
+
+            String paramsString =
+              params.length == 1 ? getParamName(params[0], javaCodeStyleManager, originalPosition) : "(" + StringUtil.join(params, parameter -> {
+                return getParamName(parameter, javaCodeStyleManager, originalPosition);
+              }, ",") + ")";
+
+            final CodeStyleManager codeStyleManager = CodeStyleManager.getInstance(project);
+            PsiLambdaExpression lambdaExpression = (PsiLambdaExpression) JavaPsiFacade.getElementFactory(project)
+              .createExpressionFromText(paramsString + " -> {}", null);
+            lambdaExpression = (PsiLambdaExpression)codeStyleManager.reformat(lambdaExpression);
+            paramsString = lambdaExpression.getParameterList().getText();
+            final LookupElementBuilder builder =
+              LookupElementBuilder.create(functionalInterfaceMethod, paramsString).withPresentableText(paramsString + " -> {}").withInsertHandler((context, item) -> {
+                final Editor editor = context.getEditor();
+                EditorModificationUtil.insertStringAtCaret(editor, " -> ");
+              }).withIcon(AllIcons.Nodes.AnonymousClass);
+            LookupElement lambdaElement = builder.withAutoCompletionPolicy(AutoCompletionPolicy.NEVER_AUTOCOMPLETE);
+            if (prioritize) {
+              lambdaElement = PrioritizedLookupElement.withPriority(lambdaElement, 1);
+            }
+            result.add(lambdaElement);
+          }
+
+          if (params.length == 1) {
+            final PsiType expectedReturnType = substitutor.substitute(functionalInterfaceMethod.getReturnType());
+            if (expectedReturnType != null) {
+              final PsiClass paramClass = PsiUtil.resolveClassInClassTypeOnly(params[0].getType());
+              if (paramClass != null && !paramClass.hasTypeParameters()) {
+                final Set<String> visited = new HashSet<String>();
+                for (PsiMethod psiMethod : paramClass.getAllMethods()) {
+                  final PsiType returnType = psiMethod.getReturnType();
+                  if (returnType != null &&
+                      psiMethod.getParameterList().getParametersCount() == 0 &&
+                      visited.add(psiMethod.getName()) &&
+                      !psiMethod.hasModifierProperty(PsiModifier.STATIC) &&
+                      JavaResolveUtil.isAccessible(psiMethod, null, psiMethod.getModifierList(), originalPosition, null, null) &&
+                      TypeConversionUtil.isAssignable(expectedReturnType, returnType)) {
+                    LookupElement methodRefLookupElement = LookupElementBuilder
+                      .create(psiMethod)
+                      .withPresentableText(paramClass.getName() + "::" + psiMethod.getName())
+                      .withInsertHandler((context, item) -> {
+                        final int startOffset = context.getStartOffset();
+                        final Document document = context.getDocument();
+                        final PsiFile file = context.getFile();
+                        document.insertString(startOffset, "::");
+                        JavaCompletionUtil.insertClassReference(paramClass, file, startOffset);
+                      })
+                      .withIcon(AllIcons.Nodes.AnonymousClass)
+                      .withAutoCompletionPolicy(AutoCompletionPolicy.NEVER_AUTOCOMPLETE);
+                    if (prioritize && psiMethod.getContainingClass() == paramClass) {
+                      methodRefLookupElement = PrioritizedLookupElement.withPriority(methodRefLookupElement, 1);
+                    }
+                    result.add(methodRefLookupElement);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return result;
+  }
+
+  private static String getParamName(PsiParameter param, JavaCodeStyleManager javaCodeStyleManager, PsiElement originalPosition) {
+    return javaCodeStyleManager.suggestUniqueVariableName(param.getName(), originalPosition, true);
   }
 
   static void addExpectedTypeMembers(CompletionParameters parameters, final CompletionResultSet result) {
