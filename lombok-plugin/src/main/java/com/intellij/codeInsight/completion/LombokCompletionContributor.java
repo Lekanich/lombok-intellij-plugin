@@ -654,6 +654,12 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     return usedWords;
   }
 
+  public static void processLabelReference(CompletionResultSet result, PsiLabelReference ref) {
+    for (String s : ref.getVariants()) {
+      result.addElement(TailTypeDecorator.withTail(LookupElementBuilder.create(s), TailType.SEMICOLON));
+    }
+  }
+
   @Nullable
   public static ElementFilter getReferenceFilter(PsiElement position) {
     ElementFilter filter = JavaCompletionContributor.getReferenceFilter(position);

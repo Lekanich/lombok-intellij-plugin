@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="BJSettings">
+    <option name="bjCompiler" value="$APPLICATION_PLUGINS_DIR$/bjava-plugin/lib/compiler-0.0.1-jar-with-dependencies.jar" />
+  </component>
   <component name="CompilerConfiguration">
     <option name="DEFAULT_COMPILER" value="Javac" />
     <resourceExtensions />
