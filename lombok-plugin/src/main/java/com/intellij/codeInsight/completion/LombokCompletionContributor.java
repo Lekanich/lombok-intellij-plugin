@@ -25,7 +25,6 @@ import com.intellij.patterns.PlatformPatterns;
 import com.intellij.patterns.PsiElementPattern;
 import com.intellij.patterns.PsiJavaElementPattern;
 import com.intellij.patterns.PsiNameValuePairPattern;
-import com.intellij.pom.java.LanguageLevel;
 import com.intellij.psi.JVMElementFactories;
 import com.intellij.psi.JVMElementFactory;
 import com.intellij.psi.JavaPsiFacade;
@@ -83,7 +82,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiTypesUtil;
 import com.intellij.psi.util.PsiUtil;
 import com.intellij.psi.util.TypeConversionUtil;
-import com.intellij.util.Function;
+import com.intellij.util.Consumer;
 import com.intellij.util.ObjectUtils;
 import com.intellij.util.PairConsumer;
 import com.intellij.util.ProcessingContext;
@@ -99,10 +98,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static com.intellij.patterns.PsiJavaPatterns.elementType;
@@ -130,7 +126,6 @@ import static de.plushnikov.intellij.plugin.util.PsiClassUtil.getAllParents;
 public class LombokCompletionContributor extends JavaCompletionContributor {
   private static final Logger LOG = Logger.getInstance("#com.intellij.codeInsight.completion.LombokCompletionContributor");
   private static final PsiJavaElementPattern.Capture<PsiElement> UNEXPECTED_REFERENCE_AFTER_DOT = psiElement().afterLeaf(".").insideStarting(psiExpressionStatement());
-  private static final Map<LanguageLevel, JavaCompletionData> ourCompletionData;
   private static final PsiNameValuePairPattern NAME_VALUE_PAIR = psiNameValuePair().withSuperParent(2, psiElement(PsiAnnotation.class));
   private static final ElementPattern<PsiElement> ANNOTATION_ATTRIBUTE_NAME = or(psiElement(PsiIdentifier.class).withParent(NAME_VALUE_PAIR),
       psiElement().afterLeaf("(").withParent(psiReferenceExpression().withParent(NAME_VALUE_PAIR)));
@@ -158,13 +153,6 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
              ((PsiReferenceExpression)rulezzRef).getQualifier() == null &&
              LambdaUtil.isValidLambdaContext(rulezzRef.getParent());
     }});
-
-  static {
-    ourCompletionData = new LinkedHashMap<>();
-    ourCompletionData.put(LanguageLevel.JDK_1_8, new Java18CompletionData());
-    ourCompletionData.put(LanguageLevel.JDK_1_5, new Java15CompletionData());
-    ourCompletionData.put(LanguageLevel.JDK_1_3, new JavaCompletionData());
-  }
 
   final public static class LombokElementFilter implements ElementFilter {
     public static final ElementFilter INSTANCE = new LombokElementFilter();
@@ -277,7 +265,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
       return;
     }
 
-    final InheritorsHolder inheritors = new InheritorsHolder(position, result);
+    final InheritorsHolder inheritors = new InheritorsHolder(result);
     if (IN_TYPE_ARGS.accepts(position)) {
       new TypeArgumentCompletionProviderEx(false, inheritors){
         @Override
@@ -450,7 +438,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
       for (final LookupElement element : set) {
         result.addElement(element);
       }
-      addAllClasses(parameters, result, new InheritorsHolder(insertedElement, result));
+      addAllClasses(parameters, result, new InheritorsHolder(result));
     }
 
     if (annoClass != null) {
@@ -509,26 +497,17 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     return orFilter;
   }
 
-  private static JavaCompletionData getCompletionData(LanguageLevel level) {
-    final Set<Map.Entry<LanguageLevel, JavaCompletionData>> entries = ourCompletionData.entrySet();
-    for (Map.Entry<LanguageLevel, JavaCompletionData> entry : entries) {
-      if (entry.getKey().isAtLeast(level)) return entry.getValue();
-    }
-    return ourCompletionData.get(LanguageLevel.JDK_1_3);
-  }
+  private static void addKeywords(CompletionParameters parameters, final CompletionResultSet result) {
+    Consumer<LookupElement> noMiddleMatches = new Consumer<LookupElement>() {
+      @Override
+      public void consume(LookupElement element) {
+        if (element.getLookupString().startsWith(result.getPrefixMatcher().getPrefix())) {
+          result.addElement(element);
+        }
+      }
+    };
 
-  private static void addKeywords(CompletionParameters parameters, CompletionResultSet result) {
-    PsiElement position = parameters.getPosition();
-    final Set<LookupElement> lookupSet = new LinkedHashSet<LookupElement>();
-    final Set<CompletionVariant> keywordVariants = new HashSet<CompletionVariant>();
-    final JavaCompletionData completionData = getCompletionData(PsiUtil.getLanguageLevel(position));
-    completionData.addKeywordVariants(keywordVariants, position, parameters.getOriginalFile());
-    completionData.completeKeywordsBySet(lookupSet, keywordVariants, position, result.getPrefixMatcher(), parameters.getOriginalFile());
-    completionData.fillCompletions(parameters, result);
-
-    for (final LookupElement item : lookupSet) {
-      result.addElement(item);
-    }
+    de.plushnikov.intellij.plugin.codeInsight.completion.JavaKeywordCompletion.addKeywords(parameters, noMiddleMatches);
   }
 
   private static boolean hasFieldDefaults(PsiReferenceExpression reference) {

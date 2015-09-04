@@ -3,7 +3,7 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.1.0</version>
+  <version>1.1.1</version>
 
   <idea-version since-build="142.00"/>
 
@@ -57,6 +57,7 @@
     <highlightVisitor implementation="de.plushnikov.intellij.plugin.extension.LombokHighlightVisitor"/>
     <annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokErrorAnnotator"/>
     <annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokFinalAnnotator"/>
+    <annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokFinalAnnotationAnnotator"/>
 		<annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokNonNullAnnotator"/>
 
 		<fileBasedIndex implementation="de.plushnikov.intellij.plugin.lombokconfig.LombokConfigIndex"/>
@@ -213,6 +214,8 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+      <li>1.1.1</li>
+          <br> added quickFix to annotation for Final, FinalArgs and FieldDefaults
       <li>1.1.0</li>
           <br> up to 15 IDEA
 		<li>0.9.5

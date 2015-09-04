@@ -32,7 +32,7 @@ public class LombokFinalAnnotator implements Annotator {
   private AnnotationHolder holder;
   private PsiKeyword keyword;
 
-  private static class RemoveFinalIntentionAction extends BaseIntentionAction {
+  final private static class RemoveFinalIntentionAction extends BaseIntentionAction {
     private PsiKeyword keyword;
 
     public RemoveFinalIntentionAction(PsiKeyword keyword) {
