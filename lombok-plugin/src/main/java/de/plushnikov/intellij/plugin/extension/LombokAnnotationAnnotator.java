@@ -19,7 +19,6 @@ import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.IncorrectOperationException;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import de.plushnikov.intellij.plugin.util.PsiTreeUtilEx;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.Final;
 import lombok.experimental.FinalArgs;
@@ -40,18 +39,22 @@ import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.getStringAnno
  * @version 1.1.1
  * @since 1.1.1
  */
-final public class LombokFinalAnnotationAnnotator implements Annotator {
+final public class LombokAnnotationAnnotator implements Annotator {
 	private static final QuickFixFactory FACTORY = QuickFixFactory.getInstance();
 	private static final String FINAL_MESSAGE = "Remove all final modifiers";
 	private static final String FINALARGS_MESSAGE = "Remove final modifiers in args";
 	private static final String MODIFIER_MESSAGE = "Remove current modifier from fields.";
 
-	@FieldDefaults(makeFinal = true)
-	@RequiredArgsConstructor
 	final private static class MultiModifierFix extends BaseIntentionAction {
-		private String message;
-		private List<PsiVariable> variables;
-		private String modifier;
+		private final String message;
+		private final List<PsiVariable> variables;
+		private final String modifier;
+
+		private MultiModifierFix(String message, List<PsiVariable> variables, String modifier) {
+			this.message = message;
+			this.variables = variables;
+			this.modifier = modifier;
+		}
 
 		@Nls @NotNull @Override public String getFamilyName() { return message; }
 
