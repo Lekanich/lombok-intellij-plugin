@@ -60,7 +60,14 @@ final public class LombokAnnotationAnnotator implements Annotator {
 
 		@NotNull @Override public String getText() { return getFamilyName(); }
 
-		@Override public boolean isAvailable(@NotNull Project project, Editor editor, PsiFile file) { return true; }
+		@Override public boolean isAvailable(@NotNull Project project, Editor editor, PsiFile file) {
+			for (PsiVariable variable : variables) {
+				PsiModifierList list = variable.getModifierList();
+				if (list != null && list.hasExplicitModifier(modifier)) return true;
+			}
+
+			return false;
+		}
 
 		@Override
 		public void invoke(@NotNull Project project, Editor editor, PsiFile file) throws IncorrectOperationException {

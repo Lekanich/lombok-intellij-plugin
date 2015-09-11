@@ -3,7 +3,7 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.1.1</version>
+  <version>1.1.2</version>
 
   <idea-version since-build="142.00"/>
 
@@ -214,6 +214,8 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+      <li>1.1.2</li>
+          <br> simple fix fielddefaults
       <li>1.1.1</li>
           <br> added quickFix to annotation for Final, FinalArgs and FieldDefaults
       <li>1.1.0</li>
