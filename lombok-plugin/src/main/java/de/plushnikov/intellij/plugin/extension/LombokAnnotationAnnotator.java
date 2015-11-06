@@ -7,14 +7,13 @@ import com.intellij.lang.annotation.Annotator;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiAnnotation;
-import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
-import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiVariable;
+import com.intellij.psi.impl.source.PsiExtensibleClass;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.IncorrectOperationException;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
@@ -26,7 +25,6 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -98,11 +96,11 @@ final public class LombokAnnotationAnnotator implements Annotator {
 			List<PsiVariable> psiVariables = getVariablesForFix(PsiTreeUtilEx.getDeepChildrenOfType(((PsiMethod) parent).getParameterList(), PsiVariable.class), PsiModifier.FINAL);
 			if (!psiVariables.isEmpty()) regMultiFix(holder, annotation, psiVariables, FINALARGS_MESSAGE, PsiModifier.FINAL);
 		} else if (isAnnotation(FieldDefaults.class, annotation)) {
-			if (!(parent instanceof PsiClass) || !PsiAnnotationUtil.getBooleanAnnotationValue(annotation, "makeFinal", false)) return;
+			if (!(parent instanceof PsiExtensibleClass) || !PsiAnnotationUtil.getBooleanAnnotationValue(annotation, "makeFinal", false)) return;
 
 		// - check final
-			PsiField[] fields = ((PsiClass) parent).getFields();
-			List<PsiVariable> psiVariables = getVariablesForFix(Arrays.asList(fields), PsiModifier.FINAL);
+			List<PsiVariable> fields = PsiTreeUtil.getChildrenOfTypeAsList(parent, PsiVariable.class);
+			List<PsiVariable> psiVariables = getVariablesForFix(fields, PsiModifier.FINAL);
 			if (!psiVariables.isEmpty()) regMultiFix(holder, annotation, psiVariables, FINAL_MESSAGE, PsiModifier.FINAL);
 
 		// - check access modifier
@@ -111,7 +109,7 @@ final public class LombokAnnotationAnnotator implements Annotator {
 
 			String accessLevelToJavaString = convertAccessLevelToJavaModifier(level);
 
-			psiVariables = getVariablesForFix(Arrays.asList(fields), accessLevelToJavaString);
+			psiVariables = getVariablesForFix(fields, accessLevelToJavaString);
 			if (!psiVariables.isEmpty()) regMultiFix(holder, annotation, psiVariables, MODIFIER_MESSAGE, accessLevelToJavaString);
 		}
 	}
