@@ -307,7 +307,7 @@ final public class FieldDefaultsUtil {
     PsiModifierList modifierList = field.getModifierList();
     PsiAnnotation annotation = findAnnotation(field.getContainingClass(), FieldDefaults.class.getCanonicalName());
 
-    if (!field.hasModifierProperty(PsiModifier.PUBLIC) && !field.hasModifierProperty(PsiModifier.PRIVATE) && !field.hasModifierProperty(PsiModifier.PROTECTED) && annotation != null) {
+    if (canChangeScopeModifier(field, place)) {
       String access = LombokProcessorUtil.convertAccessLevelToJavaModifier(PsiAnnotationUtil.getStringAnnotationValue(annotation, "level"));
 
       if (!"".equals(access)) {
@@ -319,6 +319,15 @@ final public class FieldDefaultsUtil {
     }
 
     return JavaResolveUtil.isAccessible(field, field.getContainingClass(), modifierList, place, contextClass, null);
+  }
+
+  public static boolean canChangeScopeModifier(@NotNull PsiField field, @NotNull PsiElement place) {
+    PsiClass contextClass = findContextForPlace(place);                                                                                     // find context
+    if (contextClass == null) contextClass = field.getContainingClass();
+    PsiModifierList modifierList = field.getModifierList();
+    PsiAnnotation annotation = findAnnotation(field.getContainingClass(), FieldDefaults.class.getCanonicalName());
+    return modifierList != null && annotation != null && !(field instanceof PsiEnumConstant) && (contextClass != null && !contextClass.isInterface())
+            && !modifierList.hasExplicitModifier(PsiModifier.PUBLIC) && !modifierList.hasExplicitModifier(PsiModifier.PRIVATE) && !modifierList.hasExplicitModifier(PsiModifier.PROTECTED);
   }
 
   /**

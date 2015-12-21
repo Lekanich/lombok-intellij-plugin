@@ -7,9 +7,9 @@ import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiIdentifier;
-import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.util.PsiTreeUtil;
+import de.plushnikov.intellij.plugin.handler.FieldDefaultsUtil;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import lombok.experimental.FieldDefaults;
 import org.jetbrains.annotations.NotNull;
@@ -37,7 +37,7 @@ final public class LombokErrorAnnotator implements Annotator {
     if (psiElement == null || !(psiElement instanceof PsiField)) return;
 
     PsiField field = (PsiField) psiElement;
-    if (field.hasModifierProperty(PsiModifier.PUBLIC) || field.hasModifierProperty(PsiModifier.PROTECTED) || field.hasModifierProperty(PsiModifier.PRIVATE)) return;
+    if (FieldDefaultsUtil.canChangeScopeModifier(field, field)) return;
     PsiClass fieldClass = field.getContainingClass();
     if (fieldClass != null && !PsiAnnotationUtil.isAnnotatedWith(fieldClass, FieldDefaults.class)) return;                               // check only field with @FieldDefaults changes
 
