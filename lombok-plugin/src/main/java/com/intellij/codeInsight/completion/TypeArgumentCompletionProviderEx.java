@@ -112,10 +112,23 @@ class TypeArgumentCompletionProviderEx extends CompletionProvider<CompletionPara
       typeItems.add(PsiTypeLookupItem.createLookupItem(arg, context));
     }
 
-    boolean hasParameters = ConstructorInsertHandler.hasConstructorParameters(actualClass, context);
+    boolean hasParameters = hasConstructorParameters(actualClass, context);
     TypeArgsLookupElement element = new TypeArgsLookupElement(typeItems, globalTail, hasParameters);
     element.registerSingleClass(myInheritors);
     resultSet.addElement(element);
+  }
+
+  static boolean hasConstructorParameters(PsiClass psiClass, @NotNull PsiElement place) {
+    final PsiResolveHelper resolveHelper = JavaPsiFacade.getInstance(place.getProject()).getResolveHelper();
+    boolean hasParams = false;
+    for (PsiMethod constructor : psiClass.getConstructors()) {
+      if (!resolveHelper.isAccessible(constructor, place, null)) continue;
+      if (constructor.getParameterList().getParametersCount() > 0) {
+        hasParams = true;
+        break;
+      }
+    }
+    return hasParams;
   }
 
   @Nullable
