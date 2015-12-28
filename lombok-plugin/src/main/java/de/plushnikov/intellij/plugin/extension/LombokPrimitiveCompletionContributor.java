@@ -45,8 +45,9 @@ public class LombokPrimitiveCompletionContributor extends CompletionContributor 
 
         PsiType callType = iterator.next().getType();
         if (callType == null || !isPrimitive(callType)) return;
+
         PsiClass classCall = getContainingClass(parameters.getPosition());
-        if (!isAnnotatedWith(classCall, ExtensionMethod.class)) return;
+        if (classCall == null || !isAnnotatedWith(classCall, ExtensionMethod.class)) return;
 
       // get methods for this type
         for (PsiMethod psiMethod : getExtendingMethods(classCall)) {
