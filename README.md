@@ -3,17 +3,17 @@ lombok-intellij-plugin [![Build Status](https://travis-ci.org/mplushnikov/lombok
 
 [![Join the chat at https://gitter.im/mplushnikov/lombok-intellij-plugin](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/mplushnikov/lombok-intellij-plugin?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-## Plugin for [IntelliJ IDEA](http://plugins.jetbrains.com/plugin/6317?pr=idea plugin) to support [Lombok](http://code.google.com/p/projectlombok/) annotations. ##
+## Plugin for [IntelliJ IDEA](http://plugins.jetbrains.com/plugin/6317?pr=idea plugin) to support [Lombok](https://projectlombok.org) annotations. ##
 
 Provides support for lombok annotations to write great Java code with IntelliJ IDEA.
 
-**Last version (0.9.4) released on 29.04.2015**
+**Last version (0.9.7) released on 10.01.2016**
 
-Twelfth version of plugin released. Bugfixes and initial support for some cool lombok and delombok refactoring actions with Intellij!
+Fifteenth version of plugin released. Bugfixes and new features support!
 
 Install it automatically from IntelliJ Idea plugin repository.
 
-Tested and supports IntelliJ versions: 12.1.7, 13.1.6, and 14.1.2  
+Tested and supports IntelliJ versions: 12.1.7, 13.1.6, 14.1.4 and 15.0.2  
 
 Support for IntelliJ 11.1.5 by plugin version 0.9.1
 
@@ -29,7 +29,8 @@ Features / Supports
 - [@AllArgsConstructor, @RequiredArgsConstructor and @NoArgsConstructor](http://projectlombok.org/features/Constructor.html)
 - [@Log, @Log4j, @Log4j2, @Slf4j, @XSlf4j, @CommonsLog](http://projectlombok.org/features/Log.html)
 - [@Data](http://projectlombok.org/features/Data.html)
-- [@Builder](http://projectlombok.org/features/experimental/Builder.html)
+- [@Builder](https://projectlombok.org/features/Builder.html)
+- [@Singular](https://projectlombok.org/features/Builder.html#singular)
 - [@Delegate](http://projectlombok.org/features/Delegate.html)
 - [@Value](http://projectlombok.org/features/Value.html)
 - [@Accessors](http://projectlombok.org/features/experimental/Accessors.html)
@@ -51,6 +52,17 @@ Installation
   
 Restart IDE.
 
+In your project: Click Preferences, "Build, Execution, Deployment", Compiler, Annotation Processors. Click Enable Annotation Processing
+
+IntelliJ and Eclipse compiler
+-----------------------------
+If you're using Eclipse compiler with lombok, try this setup:
+- install plugin
+- change compiler setting:
+  - <kbd>...</kbd> > <kbd>Compiler</kbd> > <kbd>Java Compiler</kbd> > <kbd>Use Compiler: Eclipse</kbd>
+  - <kbd>...</kbd> > <kbd>Compiler</kbd> > <kbd>Annotation Processors</kbd> > <kbd>Enable annotation processing: checked (default configuration)</kbd>
+  - <kbd>...</kbd> > <kbd>Compiler</kbd> > <kbd>Additional build process VM options: -javaagent:lombok.jar</kbd>
+
 Developed By
 ------------
 [**@mplushnikov** Michail Plushnikov] (https://github.com/mplushnikov)
@@ -62,6 +74,7 @@ Developed By
 - [**@mlueders** Mike Lueders](https://github.com/mlueders)
 - [**@mg6maciej** Maciej Górski](https://github.com/mg6maciej)
 - [**@siosio** siosio](https://github.com/siosio)
+- [**@Siriah** Iris Hupkens](https://github.com/Siriah)
 
 
 License

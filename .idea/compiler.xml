@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
-  <component name="BJSettings">
-    <option name="bjCompiler" value="$APPLICATION_PLUGINS_DIR$/bjava-plugin/lib/compiler-0.0.1-jar-with-dependencies.jar" />
-  </component>
   <component name="CompilerConfiguration">
     <option name="DEFAULT_COMPILER" value="Javac" />
     <resourceExtensions />
@@ -23,10 +20,27 @@
       <profile default="true" name="Default" enabled="false">
         <processorPath useClasspath="true" />
       </profile>
+      <profile default="false" name="Annotation profile for lombok-agent" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+      </profile>
+      <profile default="false" name="Annotation profile for lombok-api" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="lombok-api" />
+      </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel target="1.6">
+    <bytecodeTargetLevel>
+      <module name="lombok-agent" target="1.6" />
       <module name="lombok-api" target="1.8" />
       <module name="lombok-intellij-plugin" target="1.5" />
+      <module name="lombok-manual-test" target="1.6" />
+      <module name="lombok-test" target="1.6" />
+      <module name="lombok_pg-manual-test" target="1.6" />
       <module name="lombok-plugin" target="1.8" />
     </bytecodeTargetLevel>
   </component>

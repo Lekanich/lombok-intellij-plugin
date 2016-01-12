@@ -21,6 +21,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.util.Query;
 import com.siyeh.ig.psiutils.ClassUtils;
 import de.plushnikov.intellij.plugin.handler.LazyGetterHandler;
+import de.plushnikov.intellij.plugin.handler.OnXAnnotationHandler;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import lombok.AccessLevel;
 import lombok.experimental.FieldDefaults;
@@ -37,8 +38,8 @@ import static de.plushnikov.intellij.plugin.handler.FieldDefaultsUtil.isAccessib
 import static de.plushnikov.intellij.plugin.util.PsiClassUtil.hasParent;
 
 public class LombokHighlightErrorFilter implements HighlightInfoFilter {
-
   private static final Pattern UNINITIALIZED_MESSAGE = Pattern.compile("Variable '.+' might not have been initialized");
+  private static final Pattern LOMBOK_ANYANNOTATIONREQUIRED = Pattern.compile("Incompatible types\\. Found: '__*', required: 'lombok.*AnyAnnotation\\[\\]'");
 
   @Override
   public boolean accept(@NotNull HighlightInfo highlightInfo, @Nullable PsiFile file) {
@@ -49,8 +50,17 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
 
     if (HighlightSeverity.ERROR.equals(highlightInfo.getSeverity())) {
 
+      String description = StringUtil.notNullize(highlightInfo.getDescription());
+
       // Handling LazyGetter
-      if (uninitializedField(highlightInfo.getDescription()) && LazyGetterHandler.isLazyGetterHandled(highlightInfo, file)) {
+      if (uninitializedField(description) && LazyGetterHandler.isLazyGetterHandled(highlightInfo, file)) {
+        return false;
+      }
+
+      //Handling onX parameters
+      if (OnXAnnotationHandler.isOnXParameterAnnotation(highlightInfo, file)
+          || OnXAnnotationHandler.isOnXParameterValue(highlightInfo, file)
+          || LOMBOK_ANYANNOTATIONREQUIRED.matcher(description).matches()) {
         return false;
       }
       if (HighlightInfoType.WRONG_REF.equals(highlightInfo.type)) {
@@ -137,6 +147,6 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
   }
 
   private boolean uninitializedField(String description) {
-    return UNINITIALIZED_MESSAGE.matcher(StringUtil.notNullize(description)).matches();
+    return UNINITIALIZED_MESSAGE.matcher(description).matches();
   }
 }

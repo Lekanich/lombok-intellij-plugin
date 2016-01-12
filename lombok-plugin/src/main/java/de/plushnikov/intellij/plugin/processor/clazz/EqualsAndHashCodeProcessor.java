@@ -1,5 +1,6 @@
 package de.plushnikov.intellij.plugin.processor.clazz;
 
+import com.intellij.lang.java.JavaLanguage;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiArrayType;
 import com.intellij.psi.PsiClass;
@@ -14,7 +15,9 @@ import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.util.StringBuilderSpinAllocator;
 import de.plushnikov.intellij.plugin.lombokconfig.ConfigKeys;
 import de.plushnikov.intellij.plugin.problem.ProblemBuilder;
+import de.plushnikov.intellij.plugin.processor.LombokPsiElementUsage;
 import de.plushnikov.intellij.plugin.psi.LombokLightMethodBuilder;
+import de.plushnikov.intellij.plugin.psi.LombokLightParameter;
 import de.plushnikov.intellij.plugin.quickfix.PsiQuickFixFactory;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
@@ -135,13 +138,18 @@ public class EqualsAndHashCodeProcessor extends AbstractClassProcessor {
 
     final String blockText = createEqualsBlockString(psiClass, psiAnnotation, hasCanEqualMethod);
 
-    return new LombokLightMethodBuilder(psiManager, EQUALS_METHOD_NAME)
+    LombokLightMethodBuilder methodBuilder = new LombokLightMethodBuilder(psiManager, EQUALS_METHOD_NAME)
         .withModifier(PsiModifier.PUBLIC)
         .withMethodReturnType(PsiType.BOOLEAN)
         .withContainingClass(psiClass)
         .withNavigationElement(psiAnnotation)
-        .withParameter("o", PsiType.getJavaLangObject(psiManager, GlobalSearchScope.allScope(psiClass.getProject())))
         .withBody(PsiMethodUtil.createCodeBlockFromText(blockText, psiClass));
+
+    final LombokLightParameter methodParameter = new LombokLightParameter("o", PsiType.getJavaLangObject(
+        psiManager, GlobalSearchScope.allScope(psiClass.getProject())), methodBuilder, JavaLanguage.INSTANCE);
+    addOnXAnnotations(psiAnnotation, methodParameter.getModifierList(), "onParam");
+
+    return methodBuilder.withParameter(methodParameter);
   }
 
   @NotNull
@@ -159,18 +167,23 @@ public class EqualsAndHashCodeProcessor extends AbstractClassProcessor {
   }
 
   @NotNull
-  private PsiMethod createCanEqualMethod(@NotNull PsiClass psiClass, @NotNull PsiElement psiNavTargetElement) {
+  private PsiMethod createCanEqualMethod(@NotNull PsiClass psiClass, @NotNull PsiAnnotation psiAnnotation) {
     final PsiManager psiManager = psiClass.getManager();
 
     final String blockText = String.format("return other instanceof %s;", psiClass.getName());
 
-    return new LombokLightMethodBuilder(psiManager, CAN_EQUAL_METHOD_NAME)
+    LombokLightMethodBuilder methodBuilder = new LombokLightMethodBuilder(psiManager, CAN_EQUAL_METHOD_NAME)
         .withModifier(PsiModifier.PROTECTED)
         .withMethodReturnType(PsiType.BOOLEAN)
         .withContainingClass(psiClass)
-        .withNavigationElement(psiNavTargetElement)
-        .withParameter("other", PsiType.getJavaLangObject(psiManager, GlobalSearchScope.allScope(psiClass.getProject())))
+        .withNavigationElement(psiAnnotation)
         .withBody(PsiMethodUtil.createCodeBlockFromText(blockText, psiClass));
+
+    final LombokLightParameter methodParameter = new LombokLightParameter("other", PsiType.getJavaLangObject(
+        psiManager, GlobalSearchScope.allScope(psiClass.getProject())), methodBuilder, JavaLanguage.INSTANCE);
+    addOnXAnnotations(psiAnnotation, methodParameter.getModifierList(), "onParam");
+
+    return methodBuilder.withParameter(methodParameter);
   }
 
   private String createEqualsBlockString(@NotNull PsiClass psiClass, @NotNull PsiAnnotation psiAnnotation, boolean hasCanEqualMethod) {
@@ -289,5 +302,14 @@ public class EqualsAndHashCodeProcessor extends AbstractClassProcessor {
     }
   }
 
-
+    @Override
+  public LombokPsiElementUsage checkFieldUsage(@NotNull PsiField psiField, @NotNull PsiAnnotation psiAnnotation) {
+    final PsiClass containingClass = psiField.getContainingClass();
+    if (null != containingClass) {
+      if (PsiClassUtil.getNames(filterFields(containingClass, psiAnnotation, true)).contains(psiField.getName())) {
+        return LombokPsiElementUsage.READ;
+      }
+    }
+    return LombokPsiElementUsage.NONE;
+  }
 }

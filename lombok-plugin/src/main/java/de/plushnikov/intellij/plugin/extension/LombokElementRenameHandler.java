@@ -1,15 +1,17 @@
 package de.plushnikov.intellij.plugin.extension;
 
 import com.intellij.openapi.actionSystem.DataContext;
-import com.intellij.openapi.actionSystem.LangDataKeys;
 import com.intellij.openapi.actionSystem.PlatformDataKeys;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiFile;
 import com.intellij.refactoring.RefactoringBundle;
+import com.intellij.refactoring.rename.PsiElementRenameHandler;
 import com.intellij.refactoring.rename.RenameHandler;
 import com.intellij.refactoring.util.CommonRefactoringUtil;
+import de.plushnikov.intellij.plugin.psi.LombokLightClassBuilder;
+import de.plushnikov.intellij.plugin.psi.LombokLightFieldBuilder;
 import de.plushnikov.intellij.plugin.psi.LombokLightMethodBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -20,8 +22,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public class LombokElementRenameHandler implements RenameHandler {
   public boolean isAvailableOnDataContext(DataContext dataContext) {
-    final PsiElement element = LangDataKeys.PSI_ELEMENT.getData(dataContext);
-    return element instanceof LombokLightMethodBuilder;
+    final PsiElement element = PsiElementRenameHandler.getElement(dataContext);
+    return element instanceof LombokLightMethodBuilder || element instanceof LombokLightClassBuilder || element instanceof LombokLightFieldBuilder;
   }
 
   public boolean isRenaming(DataContext dataContext) {

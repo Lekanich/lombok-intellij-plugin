@@ -1,9 +1,5 @@
 package de.plushnikov.intellij.plugin.util;
 
-import com.google.common.base.Function;
-import com.google.common.base.Predicates;
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
 import com.intellij.psi.CommonClassNames;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
@@ -11,6 +7,7 @@ import com.intellij.psi.PsiClassType;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiElementFactory;
 import com.intellij.psi.PsiField;
+import com.intellij.psi.PsiMember;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiType;
@@ -20,37 +17,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * @author Plushnikov Michail
  */
 public class PsiClassUtil {
-
-  private static final Function<PsiElement, PsiMethod> PSI_ELEMENT_TO_METHOD_FUNCTION = new Function<PsiElement, PsiMethod>() {
-    @Override
-    public PsiMethod apply(PsiElement psiElement) {
-      return (PsiMethod) psiElement;
-    }
-  };
-  private static final Function<PsiElement, PsiField> PSI_ELEMENT_TO_FIELD_FUNCTION = new Function<PsiElement, PsiField>() {
-    @Override
-    public PsiField apply(PsiElement psiElement) {
-      return (PsiField) psiElement;
-    }
-  };
-  private static final Function<PsiElement, PsiClass> PSI_ELEMENT_TO_CLASS_FUNCTION = new Function<PsiElement, PsiClass>() {
-    @Override
-    public PsiClass apply(PsiElement psiElement) {
-      return (PsiClass) psiElement;
-    }
-  };
 
   /**
    * Workaround to get all of original Methods of the psiClass, without calling PsiAugmentProvider infinitely
@@ -63,7 +38,7 @@ public class PsiClassUtil {
     if (psiClass instanceof PsiExtensibleClass) {
       return ((PsiExtensibleClass) psiClass).getOwnMethods();
     } else {
-      return Arrays.stream(psiClass.getChildren()).filter(child -> child instanceof PsiMethod).map(element->(PsiMethod)element).collect(Collectors.toList());
+      return filterPsiElements(psiClass, PsiMethod.class);
     }
   }
 
@@ -78,9 +53,7 @@ public class PsiClassUtil {
     if (psiClass instanceof PsiExtensibleClass) {
       return ((PsiExtensibleClass) psiClass).getOwnFields();
     } else {
-      return Collections2.transform(
-          Collections2.filter(Lists.newArrayList(psiClass.getChildren()), Predicates.instanceOf(PsiField.class)),
-          PSI_ELEMENT_TO_FIELD_FUNCTION);
+      return filterPsiElements(psiClass, PsiField.class);
     }
   }
 
@@ -95,10 +68,18 @@ public class PsiClassUtil {
     if (psiClass instanceof PsiExtensibleClass) {
       return ((PsiExtensibleClass) psiClass).getOwnInnerClasses();
     } else {
-      return Collections2.transform(
-          Collections2.filter(Lists.newArrayList(psiClass.getChildren()), Predicates.instanceOf(PsiClass.class)),
-          PSI_ELEMENT_TO_CLASS_FUNCTION);
+      return filterPsiElements(psiClass, PsiClass.class);
     }
+  }
+
+  protected static <T extends PsiElement> Collection<T> filterPsiElements(@NotNull PsiClass psiClass, @NotNull Class<T> disiredClass) {
+    Collection<T> result = new ArrayList<T>();
+    for (PsiElement psiElement : psiClass.getChildren()) {
+      if (disiredClass.isAssignableFrom(psiElement.getClass())) {
+        result.add((T) psiElement);
+      }
+    }
+    return result;
   }
 
   @NotNull
@@ -139,18 +120,6 @@ public class PsiClassUtil {
     return superTypes.length == 0 || superTypes.length > 1 || CommonClassNames.JAVA_LANG_OBJECT.equals(superTypes[0].getCanonicalText());
   }
 
-  public static boolean hasMultiArgumentConstructor(@NotNull final PsiClass psiClass) {
-    boolean result = false;
-    final Collection<PsiMethod> definedConstructors = collectClassConstructorIntern(psiClass);
-    for (PsiMethod psiMethod : definedConstructors) {
-      if (psiMethod.getParameterList().getParametersCount() > 0) {
-        result = true;
-        break;
-      }
-    }
-    return result;
-  }
-
   /**
    * Creates a PsiType for a PsiClass enriched with generic substitution information if available
    */
@@ -186,6 +155,14 @@ public class PsiClassUtil {
       }
     }
     return null;
+  }
+
+  public static Collection<String> getNames(Collection<? extends PsiMember> psiMembers) {
+    Collection<String> result = new HashSet<String>();
+    for (PsiMember psiMember : psiMembers) {
+      result.add(psiMember.getName());
+    }
+    return result;
   }
 
   @Nullable

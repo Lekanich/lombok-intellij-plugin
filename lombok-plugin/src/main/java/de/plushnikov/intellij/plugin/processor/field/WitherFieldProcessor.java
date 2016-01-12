@@ -7,9 +7,11 @@ import com.intellij.psi.PsiElement;
 import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
+import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiType;
 import com.intellij.util.StringBuilderSpinAllocator;
 import de.plushnikov.intellij.plugin.problem.ProblemBuilder;
+import de.plushnikov.intellij.plugin.processor.LombokPsiElementUsage;
 import de.plushnikov.intellij.plugin.processor.clazz.constructor.RequiredArgsConstructorProcessor;
 import de.plushnikov.intellij.plugin.psi.LombokLightMethodBuilder;
 import de.plushnikov.intellij.plugin.psi.LombokLightParameter;
@@ -182,8 +184,14 @@ public class WitherFieldProcessor extends AbstractFieldProcessor {
           .withNavigationElement(psiField)
           .withModifier(methodModifier);
 
+      PsiAnnotation witherAnnotation = PsiAnnotationUtil.findAnnotation(psiField, Wither.class);
+      addOnXAnnotations(witherAnnotation, result.getModifierList(), "onMethod");
+
       final LombokLightParameter methodParameter = new LombokLightParameter(psiFieldName, psiFieldType, result, JavaLanguage.INSTANCE);
-      copyAnnotations(psiField, methodParameter.getModifierList(), LombokUtils.NON_NULL_PATTERN, LombokUtils.NULLABLE_PATTERN, LombokUtils.DEPRECATED_PATTERN);
+      PsiModifierList methodParameterModifierList = methodParameter.getModifierList();
+      copyAnnotations(psiField, methodParameterModifierList,
+          LombokUtils.NON_NULL_PATTERN, LombokUtils.NULLABLE_PATTERN, LombokUtils.DEPRECATED_PATTERN);
+      addOnXAnnotations(witherAnnotation, methodParameterModifierList, "onParam");
       result.withParameter(methodParameter);
 
       final String paramString = getConstructorCall(psiField, psiFieldContainingClass);
@@ -217,5 +225,10 @@ public class WitherFieldProcessor extends AbstractFieldProcessor {
     } finally {
       StringBuilderSpinAllocator.dispose(paramString);
     }
+  }
+
+  @Override
+  public LombokPsiElementUsage checkFieldUsage(@NotNull PsiField psiField, @NotNull PsiAnnotation psiAnnotation) {
+    return LombokPsiElementUsage.READ_WRITE;
   }
 }
