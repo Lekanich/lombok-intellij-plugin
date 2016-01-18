@@ -1,5 +1,8 @@
 package de.plushnikov.intellij.plugin.processor.field;
 
+import java.lang.annotation.Annotation;
+import java.util.Collection;
+import java.util.List;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
@@ -22,10 +25,6 @@ import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
-
-import java.lang.annotation.Annotation;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Inspect and validate @Setter lombok annotation on a field
@@ -87,26 +86,27 @@ public class SetterFieldProcessor extends AbstractFieldProcessor {
     return null != methodVisibility;
   }
 
-  protected boolean validateExistingMethods(@NotNull PsiField psiField, @NotNull ProblemBuilder builder) {
-    boolean result = true;
-    final PsiClass psiClass = psiField.getContainingClass();
-    if (null != psiClass) {
-      final Collection<PsiMethod> classMethods = PsiClassUtil.collectClassMethodsIntern(psiClass);
+	protected boolean validateExistingMethods(@NotNull PsiField psiField, @NotNull ProblemBuilder builder) {
+		boolean result = true;
+		final PsiClass psiClass = psiField.getContainingClass();
+		if (null != psiClass) {
+			final Collection<PsiMethod> classMethods = PsiClassUtil.collectClassMethodsIntern(psiClass);
+			filterToleratedElements(classMethods);
 
-      final boolean isBoolean = PsiType.BOOLEAN.equals(psiField.getType());
-      final Collection<String> methodNames = getAllSetterNames(psiField, isBoolean);
+			final boolean isBoolean = PsiType.BOOLEAN.equals(psiField.getType());
+			final Collection<String> methodNames = getAllSetterNames(psiField, isBoolean);
 
-      for (String methodName : methodNames) {
-        if (PsiMethodUtil.hasSimilarMethod(classMethods, methodName, 1)) {
-          final String setterMethodName = getSetterName(psiField, isBoolean);
+			for (String methodName : methodNames) {
+				if (PsiMethodUtil.hasSimilarMethod(classMethods, methodName, 1)) {
+					final String setterMethodName = getSetterName(psiField, isBoolean);
 
-          builder.addWarning("Not generated '%s'(): A method with similar name '%s' already exists", setterMethodName, methodName);
-          result = false;
-        }
-      }
-    }
-    return result;
-  }
+					builder.addWarning("Not generated '%s'(): A method with similar name '%s' already exists", setterMethodName, methodName);
+					result = false;
+				}
+			}
+		}
+		return result;
+	}
 
   protected boolean validateAccessorPrefix(@NotNull PsiField psiField, @NotNull ProblemBuilder builder) {
     boolean result = true;

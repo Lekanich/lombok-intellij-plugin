@@ -1,5 +1,8 @@
 package de.plushnikov.intellij.plugin.processor.clazz;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
@@ -19,10 +22,6 @@ import de.plushnikov.intellij.plugin.util.PsiClassUtil;
 import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Inspect and validate @Getter lombok annotation on a class
@@ -80,36 +79,37 @@ public class GetterProcessor extends AbstractClassProcessor {
     return result;
   }
 
-  @NotNull
-  protected Collection<PsiField> filterGetterFields(@NotNull PsiClass psiClass) {
-    final Collection<PsiField> getterFields = new ArrayList<PsiField>();
+	@NotNull
+	protected Collection<PsiField> filterGetterFields(@NotNull PsiClass psiClass) {
+		final Collection<PsiField> getterFields = new ArrayList<PsiField>();
 
-    final Collection<PsiMethod> classMethods = PsiClassUtil.collectClassMethodsIntern(psiClass);
+		final Collection<PsiMethod> classMethods = PsiClassUtil.collectClassMethodsIntern(psiClass);
+		filterToleratedElements(classMethods);
 
-    for (PsiField psiField : psiClass.getFields()) {
-      boolean createGetter = true;
-      PsiModifierList modifierList = psiField.getModifierList();
-      if (null != modifierList) {
-        //Skip static fields.
-        createGetter = !modifierList.hasModifierProperty(PsiModifier.STATIC);
-        //Skip fields having Getter annotation already
-        createGetter &= !hasFieldProcessorAnnotation(modifierList);
-        //Skip fields that start with $
-        createGetter &= !psiField.getName().startsWith(LombokUtils.LOMBOK_INTERN_FIELD_MARKER);
-        //Skip fields if a method with same name and arguments count already exists
-        final AccessorsInfo accessorsInfo = AccessorsInfo.build(psiField);
-        final Collection<String> methodNames = LombokUtils.toAllGetterNames(accessorsInfo, psiField.getName(), PsiType.BOOLEAN.equals(psiField.getType()));
-        for (String methodName : methodNames) {
-          createGetter &= !PsiMethodUtil.hasSimilarMethod(classMethods, methodName, 0);
-        }
-      }
+		for (PsiField psiField : psiClass.getFields()) {
+			boolean createGetter = true;
+			PsiModifierList modifierList = psiField.getModifierList();
+			if (null != modifierList) {
+				//Skip static fields.
+				createGetter = !modifierList.hasModifierProperty(PsiModifier.STATIC);
+				//Skip fields having Getter annotation already
+				createGetter &= !hasFieldProcessorAnnotation(modifierList);
+				//Skip fields that start with $
+				createGetter &= !psiField.getName().startsWith(LombokUtils.LOMBOK_INTERN_FIELD_MARKER);
+				//Skip fields if a method with same name and arguments count already exists
+				final AccessorsInfo accessorsInfo = AccessorsInfo.build(psiField);
+				final Collection<String> methodNames = LombokUtils.toAllGetterNames(accessorsInfo, psiField.getName(), PsiType.BOOLEAN.equals(psiField.getType()));
+				for (String methodName : methodNames) {
+					createGetter &= !PsiMethodUtil.hasSimilarMethod(classMethods, methodName, 0);
+				}
+			}
 
-      if (createGetter) {
-        getterFields.add(psiField);
-      }
-    }
-    return getterFields;
-  }
+			if (createGetter) {
+				getterFields.add(psiField);
+			}
+		}
+		return getterFields;
+	}
 
   private boolean hasFieldProcessorAnnotation(PsiModifierList modifierList) {
     boolean hasSetterAnnotation = false;

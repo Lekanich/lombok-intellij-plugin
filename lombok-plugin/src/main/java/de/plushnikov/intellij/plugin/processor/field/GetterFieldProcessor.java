@@ -1,5 +1,8 @@
 package de.plushnikov.intellij.plugin.processor.field;
 
+import java.lang.annotation.Annotation;
+import java.util.Collection;
+import java.util.List;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
@@ -21,10 +24,6 @@ import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
-
-import java.lang.annotation.Annotation;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Inspect and validate @Getter lombok annotation on a field
@@ -90,26 +89,27 @@ public class GetterFieldProcessor extends AbstractFieldProcessor {
     return PsiAnnotationUtil.getBooleanAnnotationValue(psiAnnotation, "lazy", false);
   }
 
-  protected boolean validateExistingMethods(@NotNull PsiField psiField, @NotNull ProblemBuilder builder) {
-    boolean result = true;
-    final PsiClass psiClass = psiField.getContainingClass();
-    if (null != psiClass) {
-      final boolean isBoolean = PsiType.BOOLEAN.equals(psiField.getType());
-      final AccessorsInfo accessorsInfo = AccessorsInfo.build(psiField);
-      final Collection<String> methodNames = LombokUtils.toAllGetterNames(accessorsInfo, psiField.getName(), isBoolean);
-      final Collection<PsiMethod> classMethods = PsiClassUtil.collectClassMethodsIntern(psiClass);
+	protected boolean validateExistingMethods(@NotNull PsiField psiField, @NotNull ProblemBuilder builder) {
+		boolean result = true;
+		final PsiClass psiClass = psiField.getContainingClass();
+		if (null != psiClass) {
+			final boolean isBoolean = PsiType.BOOLEAN.equals(psiField.getType());
+			final AccessorsInfo accessorsInfo = AccessorsInfo.build(psiField);
+			final Collection<String> methodNames = LombokUtils.toAllGetterNames(accessorsInfo, psiField.getName(), isBoolean);
+			final Collection<PsiMethod> classMethods = PsiClassUtil.collectClassMethodsIntern(psiClass);
+			filterToleratedElements(classMethods);
 
-      for (String methodName : methodNames) {
-        if (PsiMethodUtil.hasSimilarMethod(classMethods, methodName, 0)) {
-          final String setterMethodName = getGetterName(psiField);
+			for (String methodName : methodNames) {
+				if (PsiMethodUtil.hasSimilarMethod(classMethods, methodName, 0)) {
+					final String setterMethodName = getGetterName(psiField);
 
-          builder.addWarning("Not generated '%s'(): A method with similar name '%s' already exists", setterMethodName, methodName);
-          result = false;
-        }
-      }
-    }
-    return result;
-  }
+					builder.addWarning("Not generated '%s'(): A method with similar name '%s' already exists", setterMethodName, methodName);
+					result = false;
+				}
+			}
+		}
+		return result;
+	}
 
   protected boolean validateAccessorPrefix(@NotNull PsiField psiField, @NotNull ProblemBuilder builder) {
     boolean result = true;

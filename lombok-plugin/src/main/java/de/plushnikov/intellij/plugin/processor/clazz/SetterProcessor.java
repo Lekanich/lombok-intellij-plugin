@@ -1,5 +1,9 @@
 package de.plushnikov.intellij.plugin.processor.clazz;
 
+import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import com.intellij.psi.PsiAnnotation;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiElement;
@@ -18,11 +22,6 @@ import de.plushnikov.intellij.plugin.util.PsiFieldUtil;
 import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
-
-import java.lang.annotation.Annotation;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * Inspect and validate @Setter lombok annotation on a class
@@ -83,35 +82,36 @@ public class SetterProcessor extends AbstractClassProcessor {
     return result;
   }
 
-  @NotNull
-  protected Collection<PsiField> filterSetterFields(@NotNull PsiClass psiClass) {
-    final Collection<PsiMethod> classMethods = PsiClassUtil.collectClassMethodsIntern(psiClass);
+	@NotNull
+	protected Collection<PsiField> filterSetterFields(@NotNull PsiClass psiClass) {
+		final Collection<PsiMethod> classMethods = PsiClassUtil.collectClassMethodsIntern(psiClass);
+		filterToleratedElements(classMethods);
 
-    final Collection<PsiField> setterFields = new ArrayList<PsiField>();
-    for (PsiField psiField : psiClass.getFields()) {
-      boolean createSetter = true;
-      PsiModifierList modifierList = psiField.getModifierList();
-      if (null != modifierList) {
-        //Skip final fields.
-        createSetter = !PsiFieldUtil.isFinal(psiField);
-        //Skip static fields.
-        createSetter &= !modifierList.hasModifierProperty(PsiModifier.STATIC);
-        //Skip fields having Setter annotation already
-        createSetter &= !hasFieldProcessorAnnotation(modifierList);
-        //Skip fields that start with $
-        createSetter &= !psiField.getName().startsWith(LombokUtils.LOMBOK_INTERN_FIELD_MARKER);
-        //Skip fields if a method with same name already exists
-        final Collection<String> methodNames = getFieldProcessor().getAllSetterNames(psiField, PsiType.BOOLEAN.equals(psiField.getType()));
-        for (String methodName : methodNames) {
-          createSetter &= !PsiMethodUtil.hasSimilarMethod(classMethods, methodName, 1);
-        }
-      }
-      if (createSetter) {
-        setterFields.add(psiField);
-      }
-    }
-    return setterFields;
-  }
+		final Collection<PsiField> setterFields = new ArrayList<PsiField>();
+		for (PsiField psiField : psiClass.getFields()) {
+			boolean createSetter = true;
+			PsiModifierList modifierList = psiField.getModifierList();
+			if (null != modifierList) {
+				//Skip final fields.
+				createSetter = !PsiFieldUtil.isFinal(psiField);
+				//Skip static fields.
+				createSetter &= !modifierList.hasModifierProperty(PsiModifier.STATIC);
+				//Skip fields having Setter annotation already
+				createSetter &= !hasFieldProcessorAnnotation(modifierList);
+				//Skip fields that start with $
+				createSetter &= !psiField.getName().startsWith(LombokUtils.LOMBOK_INTERN_FIELD_MARKER);
+				//Skip fields if a method with same name already exists
+				final Collection<String> methodNames = getFieldProcessor().getAllSetterNames(psiField, PsiType.BOOLEAN.equals(psiField.getType()));
+				for (String methodName : methodNames) {
+					createSetter &= !PsiMethodUtil.hasSimilarMethod(classMethods, methodName, 1);
+				}
+			}
+			if (createSetter) {
+				setterFields.add(psiField);
+			}
+		}
+		return setterFields;
+	}
 
   private boolean hasFieldProcessorAnnotation(PsiModifierList modifierList) {
     boolean hasSetterAnnotation = false;
