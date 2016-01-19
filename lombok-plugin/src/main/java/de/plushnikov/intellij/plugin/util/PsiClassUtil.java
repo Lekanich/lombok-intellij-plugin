@@ -1,5 +1,12 @@
 package de.plushnikov.intellij.plugin.util;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 import com.intellij.psi.CommonClassNames;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
@@ -16,32 +23,21 @@ import com.intellij.psi.impl.source.PsiExtensibleClass;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 /**
  * @author Plushnikov Michail
  */
 public class PsiClassUtil {
 
-  /**
-   * Workaround to get all of original Methods of the psiClass, without calling PsiAugmentProvider infinitely
-   *
-   * @param psiClass psiClass to collect all of methods from
-   * @return all intern methods of the class
-   */
-  @NotNull
-  public static Collection<PsiMethod> collectClassMethodsIntern(@NotNull PsiClass psiClass) {
-    if (psiClass instanceof PsiExtensibleClass) {
-      return ((PsiExtensibleClass) psiClass).getOwnMethods();
-    } else {
-      return filterPsiElements(psiClass, PsiMethod.class);
-    }
-  }
+	/**
+	 * Workaround to get all of original Methods of the psiClass, without calling PsiAugmentProvider infinitely
+	 *
+	 * @param psiClass psiClass to collect all of methods from
+	 * @return all intern methods of the class
+	 */
+	@NotNull
+	public static Collection<PsiMethod> collectClassMethodsIntern(@NotNull PsiClass psiClass) {
+		return new LinkedList<>(psiClass instanceof PsiExtensibleClass ? ((PsiExtensibleClass) psiClass).getOwnMethods() : filterPsiElements(psiClass, PsiMethod.class));
+	}
 
   /**
    * Workaround to get all of original Fields of the psiClass, without calling PsiAugmentProvider infinitely
