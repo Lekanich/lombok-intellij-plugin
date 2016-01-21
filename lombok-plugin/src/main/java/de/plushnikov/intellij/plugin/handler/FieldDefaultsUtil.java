@@ -1,5 +1,9 @@
 package de.plushnikov.intellij.plugin.handler;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import com.intellij.codeInsight.daemon.JavaErrorMessages;
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType;
@@ -52,14 +56,9 @@ import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
 import lombok.experimental.FieldDefaults;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 import static com.intellij.codeInsight.AnnotationUtil.findAnnotation;
 import static de.plushnikov.intellij.plugin.util.PsiFieldUtil.isFinalByAnnotation;
+
 
 /**
  * @author Suburban Squirrel
@@ -289,14 +288,6 @@ final public class FieldDefaultsUtil {
     return HighlightControlFlowUtil.checkVariableInitializedBeforeUsage(expression, variable, uninitializedVarProblems, containingFile);
   }
 
-  private static boolean inInnerClass(PsiElement element, PsiClass containingClass, @NotNull PsiFile containingFile) {
-    while (element != null) {
-      if (element instanceof PsiClass) return !containingFile.getManager().areElementsEquivalent(element, containingClass);
-      element = element.getParent();
-    }
-    return false;
-  }
-
 // end copy past with changes block todo
 
   /**
@@ -361,9 +352,5 @@ final public class FieldDefaultsUtil {
       }
     }
     return contextClass;
-  }
-
-  private static boolean isFinal(@NotNull PsiField psiField) {
-    return psiField.hasModifierProperty(PsiModifier.FINAL);
   }
 }
