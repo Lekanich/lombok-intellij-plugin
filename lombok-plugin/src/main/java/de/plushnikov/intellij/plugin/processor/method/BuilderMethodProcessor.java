@@ -49,7 +49,10 @@ public class BuilderMethodProcessor extends AbstractMethodProcessor {
       if (null == builderClass) {
         builderClass = builderHandler.createBuilderClass(psiClass, psiMethod, psiAnnotation);
       }
-      target.add(builderHandler.createBuilderMethod(psiClass, psiMethod, builderClass, psiAnnotation));
+
+      builderHandler.createBuilderMethodIfNecessary(target, psiClass, psiMethod, builderClass, psiAnnotation);
+
+      builderHandler.createToBuilderMethodIfNecessary(target, psiClass, psiMethod, builderClass, psiAnnotation);
     }
   }
 }
