@@ -69,6 +69,8 @@
 
 		<java.elementFinder implementation="de.plushnikov.intellij.plugin.extension.LombokElementFinder" order="last"/>
 
+	<constantExpressionEvaluator language="JAVA" order="first" implementationClass="de.plushnikov.intellij.plugin.extension.LombokConstantEvaluator"/>
+
     <!--Overwrite IntelliJ Diamond inspection, to filter out val declarations-->
     <localInspection groupPath="Java" language="JAVA" shortName="Convert2Diamond" displayName="Explicit type can be replaced with &lt;&gt;"
                      groupName="Java language level migration aids" enabledByDefault="true" level="WARNING"
