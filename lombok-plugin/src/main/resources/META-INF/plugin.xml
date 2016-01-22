@@ -60,6 +60,8 @@
     <annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokAnnotationAnnotator"/>
 		<annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokNonNullAnnotator"/>
 
+		<annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokFXPropertyAnnotator"/>
+
 		<fileBasedIndex implementation="de.plushnikov.intellij.plugin.lombokconfig.LombokConfigIndex"/>
 
 		<custom.exception.handler implementation="de.plushnikov.intellij.plugin.handler.SneakyThrowsExceptionHandler"/>
@@ -106,6 +108,8 @@
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.GetterFieldProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.SetterFieldProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.WitherFieldProcessor"/>
+
+    <processor implementation="de.plushnikov.intellij.plugin.processor.field.FXPropertyProcessor"/>
 
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.DelegateMethodProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.DelegateExperimentalMethodProcessor"/>
