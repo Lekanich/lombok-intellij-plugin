@@ -262,7 +262,9 @@ public class FXPropertyProcessor extends AbstractFieldProcessor {
 	 * Determines name for the getter of the property value.
 	 */
 	private String toGetterName(@NotNull PsiField psiField) {
-		return LombokUtils.toGetterName(AccessorsInfo.build(psiField), psiField.getName(), PsiType.BOOLEAN.getBoxedType(psiField) != null);
+		PsiType type = getPropertyInnerType(psiField);
+		Boolean isBoolean = type != null && type.equals(PsiType.BOOLEAN.getBoxedType(psiField));
+		return LombokUtils.toGetterName(AccessorsInfo.build(psiField), psiField.getName(), isBoolean);
 	}
 
 	/**
