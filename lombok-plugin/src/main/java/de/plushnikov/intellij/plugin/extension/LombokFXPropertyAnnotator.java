@@ -21,8 +21,8 @@ public class LombokFXPropertyAnnotator implements Annotator {
 
 		PsiAnnotation fxPropertyAnnotation = PsiAnnotationUtil.findAnnotation((PsiField) element, FXProperty.class);
 		PsiAnnotation getterAnnotation = PsiAnnotationUtil.findAnnotation((PsiField) element, Getter.class);
-
 		if (fxPropertyAnnotation == null || getterAnnotation == null) return;
+
 		holder.createErrorAnnotation(getterAnnotation, String.format(MESSAGE, getterAnnotation.getText())).registerFix(new RemoveIntentionAction(getterAnnotation));
 	}
 }

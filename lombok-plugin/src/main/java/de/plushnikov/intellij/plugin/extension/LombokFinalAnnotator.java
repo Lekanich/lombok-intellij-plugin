@@ -16,6 +16,7 @@ import lombok.experimental.Final;
 import lombok.experimental.FinalArgs;
 import org.jetbrains.annotations.NotNull;
 
+
 /**
  * @author Suburban Squirrel
  * @version 1.0.36
