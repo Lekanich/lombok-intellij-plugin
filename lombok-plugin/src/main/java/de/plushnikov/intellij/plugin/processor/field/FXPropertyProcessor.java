@@ -16,7 +16,6 @@ import com.intellij.psi.PsiModifier;
 import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiSubstitutor;
 import com.intellij.psi.PsiType;
-import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTypesUtil;
 import de.plushnikov.intellij.plugin.problem.ProblemBuilder;
 import de.plushnikov.intellij.plugin.problem.ProblemEmptyBuilder;
@@ -37,6 +36,7 @@ import lombok.experimental.Final;
 import lombok.experimental.NonFinal;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import static com.intellij.psi.search.GlobalSearchScope.allScope;
 
 
 /**
@@ -65,22 +65,21 @@ public class FXPropertyProcessor extends AbstractFieldProcessor {
 		PsiClass psiClass = psiField.getContainingClass();
 		PsiType innerType = getPropertyInnerType(psiField);
 		PsiType fieldType = psiField.getType();
-
 		if (methodModifier == null || psiClass == null || innerType == null) return;
 
 	// adds getter for the inner value of the property to the list of PsiElements of the class
-		if (validateExistingMethods(toGetter(psiField), 0, psiField, ProblemEmptyBuilder.getInstance())) {
-			target.add(createMethod(psiField, psiClass, methodModifier, innerType, null, toGetter(psiField)));
+		if (validateExistingMethods(toGetterName(psiField), 0, psiField, ProblemEmptyBuilder.getInstance())) {
+			target.add(createMethod(psiField, psiClass, methodModifier, innerType, null, toGetterName(psiField)));
 		}
 
 	// adds accessor for the property to the list of PsiElements of the class
-		if (validateExistingMethods(toPropertyAccessor(psiField), 0, psiField, ProblemEmptyBuilder.getInstance())) {
-			target.add(createMethod(psiField, psiClass, methodModifier, fieldType, null, toPropertyAccessor(psiField)));
+		if (validateExistingMethods(toPropertyAccessorName(psiField), 0, psiField, ProblemEmptyBuilder.getInstance())) {
+			target.add(createMethod(psiField, psiClass, methodModifier, fieldType, null, toPropertyAccessorName(psiField)));
 		}
 
 	// adds setter for the inner value of the property to the list of PsiElements of the class
-		if (validateOnSet(psiField) && validateExistingMethods(toSetter(psiField), 1, psiField, ProblemEmptyBuilder.getInstance())) {
-			target.add(createMethod(psiField, psiClass, methodModifier, determineReturnTypeOnSet(psiField), innerType, toSetter(psiField)));
+		if (validateOnSet(psiField) && validateExistingMethods(toSetterName(psiField), 1, psiField, ProblemEmptyBuilder.getInstance())) {
+			target.add(createMethod(psiField, psiClass, methodModifier, determineReturnTypeOnSet(psiField), innerType, toSetterName(psiField)));
 		}
 	}
 
@@ -127,9 +126,9 @@ public class FXPropertyProcessor extends AbstractFieldProcessor {
 		if (innerType == null) return false;
 
 	// checks existence of similar methods
-		validateExistingMethods(toGetter(psiField), 0, psiField, builder);
-		validateExistingMethods(toPropertyAccessor(psiField), 0, psiField, builder);
-		validateExistingMethods(toSetter(psiField), 1, psiField, builder);
+		validateExistingMethods(toGetterName(psiField), 0, psiField, builder);
+		validateExistingMethods(toPropertyAccessorName(psiField), 0, psiField, builder);
+		validateExistingMethods(toSetterName(psiField), 1, psiField, builder);
 
 	// validates field prefixes if @Accessors is used
 		return validateAccessorPrefix(psiField, builder);
@@ -156,7 +155,7 @@ public class FXPropertyProcessor extends AbstractFieldProcessor {
 	@Final
 	private boolean validateOnSet(@NotNull PsiField psiField) {
 		PsiClass psiClass = PsiTypesUtil.getPsiClass(psiField.getType());
-		PsiClass writableClass = JavaPsiFacade.getInstance(psiField.getProject()).findClass(WritableValue.class.getName(), GlobalSearchScope.allScope(psiField.getProject()));
+		PsiClass writableClass = JavaPsiFacade.getInstance(psiField.getProject()).findClass(WritableValue.class.getName(), allScope(psiField.getProject()));
 		return psiClass != null && writableClass != null && !psiField.hasModifierProperty(PsiModifier.FINAL) && PsiClassUtil.hasParent(psiClass, writableClass);
 	}
 
@@ -177,8 +176,8 @@ public class FXPropertyProcessor extends AbstractFieldProcessor {
 	@Final
 	private boolean isProperty(@NotNull PsiType type, Project project) {
 		PsiClass fieldClass = PsiTypesUtil.getPsiClass(type);
-		PsiClass readOnlyClass = JavaPsiFacade.getInstance(project).findClass(ReadOnlyProperty.class.getName(), GlobalSearchScope.allScope(project));
-		PsiClass styleableClass = JavaPsiFacade.getInstance(project).findClass(StyleableProperty.class.getName(), GlobalSearchScope.allScope(project));
+		PsiClass readOnlyClass = JavaPsiFacade.getInstance(project).findClass(ReadOnlyProperty.class.getName(), allScope(project));
+		PsiClass styleableClass = JavaPsiFacade.getInstance(project).findClass(StyleableProperty.class.getName(), allScope(project));
 
 		return fieldClass != null && readOnlyClass != null && styleableClass != null
 			&& (fieldClass.isEquivalentTo(readOnlyClass) || fieldClass.isEquivalentTo(styleableClass)
@@ -218,11 +217,11 @@ public class FXPropertyProcessor extends AbstractFieldProcessor {
 		if (psiClass == null) return LombokPsiElementUsage.NONE;
 
 		Collection<PsiMethod> methods = PsiClassUtil.collectClassMethodsIntern(psiClass);
-		if (PsiMethodUtil.hasSimilarMethod(methods, toSetter(psiField), 1) && PsiMethodUtil.hasSimilarMethod(methods, toGetter(psiField), 0)) {
+		if (PsiMethodUtil.hasSimilarMethod(methods, toSetterName(psiField), 1) && PsiMethodUtil.hasSimilarMethod(methods, toGetterName(psiField), 0)) {
 			return LombokPsiElementUsage.READ_WRITE;
-		} else if (PsiMethodUtil.hasSimilarMethod(methods, toSetter(psiField), 1)) {
+		} else if (PsiMethodUtil.hasSimilarMethod(methods, toSetterName(psiField), 1)) {
 			return LombokPsiElementUsage.WRITE;
-		} else if (PsiMethodUtil.hasSimilarMethod(methods, toGetter(psiField), 0) || (innerType != null && PsiMethodUtil.hasSimilarMethod(methods, toPropertyAccessor(psiField), 0))) {
+		} else if (PsiMethodUtil.hasSimilarMethod(methods, toGetterName(psiField), 0) || (innerType != null && PsiMethodUtil.hasSimilarMethod(methods, toPropertyAccessorName(psiField), 0))) {
 			return LombokPsiElementUsage.READ;
 		}
 
@@ -243,6 +242,7 @@ public class FXPropertyProcessor extends AbstractFieldProcessor {
 		@NonFinal PsiType type = null;
 		for (PsiMethod method : psiClass.findMethodsByName(GET_METHOD, true)) {
 			if (method.getParameterList().getParametersCount() != 0) continue;
+
 			type = method.getReturnType();
 			PsiClass methReturnClass = PsiTypesUtil.getPsiClass(type);
 			if (methReturnClass != null && methReturnClass.getQualifiedName() != null) return psiSubstitutor.substitute(type);
@@ -254,21 +254,21 @@ public class FXPropertyProcessor extends AbstractFieldProcessor {
 	/**
 	 * Determines name for the setter of the property value.
 	 */
-	private String toSetter(@NotNull PsiField psiField) {
+	private String toSetterName(@NotNull PsiField psiField) {
 		return LombokUtils.toSetterName(AccessorsInfo.build(psiField), psiField.getName(), false);
 	}
 
 	/**
 	 * Determines name for the getter of the property value.
 	 */
-	private String toGetter(@NotNull PsiField psiField) {
+	private String toGetterName(@NotNull PsiField psiField) {
 		return LombokUtils.toGetterName(AccessorsInfo.build(psiField), psiField.getName(), PsiType.BOOLEAN.getBoxedType(psiField) != null);
 	}
 
 	/**
 	 * Determines name for the accessor of the property.
 	 */
-	private String toPropertyAccessor(@NotNull PsiField psiField) {
+	private String toPropertyAccessorName(@NotNull PsiField psiField) {
 		return AccessorsInfo.build(psiField).removePrefix(psiField.getName()) + PROPERTY;
 	}
 }
