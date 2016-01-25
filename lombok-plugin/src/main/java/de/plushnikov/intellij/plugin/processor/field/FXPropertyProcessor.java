@@ -47,6 +47,7 @@ import static com.intellij.psi.search.GlobalSearchScope.allScope;
  */
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class FXPropertyProcessor extends AbstractFieldProcessor {
+	static String SET_METHOD = "setValue";
 	static String GET_METHOD = "getValue";
 	static String PROPERTY = "Property";
 	static String ON_METHOD = "onMethod";
@@ -106,12 +107,35 @@ public class FXPropertyProcessor extends AbstractFieldProcessor {
 			method.withModifier(PsiModifier.STATIC);
 		}
 
+	// adds method body
+		method.withBody(PsiMethodUtil.createCodeBlockFromText(createMethodBody(psiField, methodName, method.getParameterList().getParametersCount()), psiClass));
+
 	// copies annotations of psiField to modifierList of method
 		PsiModifierList modifierList = method.getModifierList();
 		copyAnnotations(psiField, modifierList, LombokUtils.NON_NULL_PATTERN, LombokUtils.NULLABLE_PATTERN, LombokUtils.DEPRECATED_PATTERN);
 		addOnXAnnotations(PsiAnnotationUtil.findAnnotation(psiField, FXProperty.class), modifierList, ON_METHOD);
 
 		return method;
+	}
+
+	@Final @NotNull
+	private String createMethodBody(@NotNull PsiField psiField, @NotNull String methodName, @NotNull Integer paramCount) {
+		PsiClass psiClass = psiField.getContainingClass();
+		if (psiClass == null) return "";
+
+		boolean isStatic = psiField.hasModifierProperty(PsiModifier.STATIC);
+		String classRef = isStatic ? psiClass.getName() : "this";
+
+		if (methodName.equals(toGetterName(psiField)) && paramCount == 0) {
+			return String.format("return %s.%s.%s();", classRef, psiField.getName(), GET_METHOD);
+		} else if (methodName.equals(toSetterName(psiField)) && paramCount == 1) {
+			String returnRef = !isStatic && AccessorsInfo.build(psiField).isChain() ? "\nreturn this;" : "";
+			return String.format("%s.%s.%s(%s);%s", classRef, psiField.getName(), SET_METHOD, psiField.getName(), returnRef);
+		} else if (methodName.equals(toPropertyAccessorName(psiField)) && paramCount == 0) {
+			return String.format("return %s.%s;", isStatic ? psiClass.getName() : "this", psiField.getName());
+		}
+
+		return "";
 	}
 
 	@Final @Override

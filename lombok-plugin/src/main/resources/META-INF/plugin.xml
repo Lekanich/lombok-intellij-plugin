@@ -196,6 +196,9 @@
       <action id="delombokSetter" class="de.plushnikov.intellij.plugin.action.delombok.DelombokSetterAction"
               text="@Setter" description="Action to replace lombok @Setter annotation with vanilla setter methods">
       </action>
+      <action id="delombokFXProperty" class="de.plushnikov.intellij.plugin.action.delombok.DelombokFXPropertyAction"
+              text="@FXProperty" description="Action to replace lombok @FXProperty annotation with vanilla accessors methods">
+      </action>
       <action id="delombokEqualsAndHashCode" class="de.plushnikov.intellij.plugin.action.delombok.DelombokEqualsAndHashCodeAction"
               text="@EqualsAndHashCode" description="Action to replace lombok @EqualsAndHashCode annotation with vanilla java methods">
       </action>
