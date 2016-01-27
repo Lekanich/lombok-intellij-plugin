@@ -28,7 +28,6 @@ import de.plushnikov.intellij.plugin.util.PsiClassUtil;
 import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
 import javafx.beans.property.ReadOnlyProperty;
 import javafx.beans.value.WritableValue;
-import javafx.css.StyleableProperty;
 import lombok.AccessLevel;
 import lombok.experimental.FXProperty;
 import lombok.experimental.FieldDefaults;
@@ -195,13 +194,13 @@ public class FXPropertyProcessor extends AbstractFieldProcessor {
 	}
 
 	/**
-	 * checks implementation of javafx.beans.property.ReadOnlyProperty or javafx.css.StyleableProperty.
+	 * checks implementation of javafx.beans.property.ReadOnlyProperty or javafx.beans.value.WritableValue.
 	 */
 	@Final
 	private boolean isProperty(@NotNull PsiType type, Project project) {
 		PsiClass fieldClass = PsiTypesUtil.getPsiClass(type);
 		PsiClass readOnlyClass = JavaPsiFacade.getInstance(project).findClass(ReadOnlyProperty.class.getName(), allScope(project));
-		PsiClass styleableClass = JavaPsiFacade.getInstance(project).findClass(StyleableProperty.class.getName(), allScope(project));
+		PsiClass styleableClass = JavaPsiFacade.getInstance(project).findClass(WritableValue.class.getName(), allScope(project));
 
 		return fieldClass != null && readOnlyClass != null && styleableClass != null
 			&& (fieldClass.isEquivalentTo(readOnlyClass) || fieldClass.isEquivalentTo(styleableClass)
