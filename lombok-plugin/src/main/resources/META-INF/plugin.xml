@@ -3,7 +3,7 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.1.5</version>
+  <version>1.1.6</version>
 
   <idea-version since-build="142.00"/>
 
@@ -221,6 +221,8 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.1.6</li>
+			<div> fixed unused message on fields with FieldDefaults annotation</div>
 		<li>1.1.5</li>
 			<div> fixed constants evaluation for fieldDefaults constant</div>
 		<li>0.9.8

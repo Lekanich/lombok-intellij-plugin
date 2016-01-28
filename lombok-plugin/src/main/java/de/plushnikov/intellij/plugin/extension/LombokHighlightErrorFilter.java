@@ -1,6 +1,7 @@
 package de.plushnikov.intellij.plugin.extension;
 
 import java.util.regex.Pattern;
+import com.intellij.codeInsight.daemon.JavaErrorMessages;
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType;
@@ -14,6 +15,7 @@ import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
+import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiType;
@@ -24,6 +26,7 @@ import com.siyeh.ig.psiutils.ClassUtils;
 import de.plushnikov.intellij.plugin.handler.LazyGetterHandler;
 import de.plushnikov.intellij.plugin.handler.OnXAnnotationHandler;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
+import de.plushnikov.intellij.plugin.util.ReflectionUtil;
 import lombok.AccessLevel;
 import lombok.Value;
 import lombok.experimental.FieldDefaults;
@@ -81,12 +84,10 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
 		if (field == null) return true;
 
 	// explicit modifier
-		if (field.hasModifierProperty(PsiModifier.PUBLIC) || field.hasModifierProperty(PsiModifier.PROTECTED) || field.hasModifierProperty(PsiModifier.PRIVATE)) return true;
+		PsiModifierList modifierList = field.getModifierList();
+		if (modifierList == null) return true;
 
-	// find usages of field
-		Query<PsiReference> search = ReferencesSearch.search(field, field.getResolveScope(), true);
-		boolean isUses = search.iterator().hasNext();                                                 // find some uses
-		if (!isUses) return true;                                                                     // remain info
+		if (modifierList.hasModifierProperty(PsiModifier.PUBLIC) || modifierList.hasExplicitModifier(PsiModifier.PROTECTED) || modifierList.hasExplicitModifier(PsiModifier.PRIVATE)) return true;
 
 	// get implicit access level
 		AccessLevel accessLevel = null;
@@ -106,8 +107,16 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
 	// not found implicit access lvl from annotations
 		if (accessLevel == null) return true;
 
+	// change description
+		changeUnusedDescription(highlightInfo, accessLevel, field.getName());
+
+	// find usages of field
+		Query<PsiReference> search = ReferencesSearch.search(field, field.getResolveScope(), true);
+		boolean isUses = search.iterator().hasNext();													// find some uses
+		if (!isUses) return true;																		// remain info
+
 		switch (accessLevel) {
-			case PUBLIC: return false;														// remove info about unused
+			case PUBLIC: return false;																	// remove info about unused
 
 			case PRIVATE:
 				for (PsiReference reference : search) {
@@ -127,6 +136,18 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
 		}
 
 		return true;                                  // also if accessLevel == AccessLevel.PACKAGE
+	}
+
+	private static void changeUnusedDescription(@NotNull HighlightInfo highlightInfo, @NotNull AccessLevel accessLevel, @Nullable String fieldName) {
+		switch (accessLevel) {
+			case PUBLIC:
+			case PROTECTED:
+				ReflectionUtil.setFinalFieldPerReflection(HighlightInfo.class, highlightInfo, String.class, JavaErrorMessages.message("field.is.not.used", fieldName), false);
+				break;
+			case PRIVATE:
+				ReflectionUtil.setFinalFieldPerReflection(HighlightInfo.class, highlightInfo, String.class, JavaErrorMessages.message("private.field.is.not.used", fieldName), false);
+				break;
+		}
 	}
 
   private boolean isInaccessibleFieldDefaultsField(@NotNull HighlightInfo highlightInfo, @NotNull PsiFile file) {
