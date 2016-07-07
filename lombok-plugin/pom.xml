@@ -12,7 +12,7 @@
 
   <properties>
     <pack.name>lombok-plugin</pack.name>
-    <intellij.sdk.name>15.1</intellij.sdk.name>
+    <intellij.sdk.name>2016.2</intellij.sdk.name>
   </properties>
 
   <dependencies>
