@@ -26,7 +26,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.ScrollType;
-import com.intellij.openapi.progress.ProcessCanceledException;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Comparing;
 import com.intellij.openapi.util.Condition;
@@ -279,10 +278,10 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     JavaCompletionSession session = new JavaCompletionSession(result);
 
     if (ANNOTATION_ATTRIBUTE_NAME.accepts(position) && !isAfterPrimitiveOrArrayType(position)) {
-      Method addExpectedTypeMembers = getMethod(JavaKeywordCompletion.class, void.class, "addExpectedTypeMembers", CompletionParameters.class, CompletionResultSet.class);
-      invokeMethod(addExpectedTypeMembers, parameters, result);
-      Method addPrimitiveTypes = getMethod(JavaKeywordCompletion.class, void.class, "addPrimitiveTypes", Consumer.class, PsiElement.class, JavaCompletionSession.class);
-      invokeMethod(addPrimitiveTypes, result, position, session);
+      Method addExpectedTypeMembers = ReflectUtil.getMethod(JavaKeywordCompletion.class, void.class, "addExpectedTypeMembers", CompletionParameters.class, CompletionResultSet.class);
+      ReflectUtil.invokeMethod(addExpectedTypeMembers, parameters, result);
+      Method addPrimitiveTypes = ReflectUtil.getMethod(JavaKeywordCompletion.class, void.class, "addPrimitiveTypes", Consumer.class, PsiElement.class, JavaCompletionSession.class);
+      ReflectUtil.invokeMethod(addPrimitiveTypes, result, position, session);
       completeAnnotationAttributeName(result, position, parameters);
       result.stopHere();
       return;
@@ -311,8 +310,8 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     addAllClasses(parameters, result, session);
 
     if (position instanceof PsiIdentifier) {
-      Method addFunctionalVariants = getMethod(FunctionalExpressionCompletionProvider.class, void.class, "addFunctionalVariants", CompletionParameters.class, boolean.class, boolean.class, CompletionResultSet.class);
-      invokeMethod(addFunctionalVariants, parameters, false, true, result);
+      Method addFunctionalVariants = ReflectUtil.getMethod(FunctionalExpressionCompletionProvider.class, void.class, "addFunctionalVariants", CompletionParameters.class, boolean.class, boolean.class, CompletionResultSet.class);
+      ReflectUtil.invokeMethod(addFunctionalVariants, parameters, false, true, result);
     }
 
     if (parent instanceof PsiReferenceExpression && !((PsiReferenceExpression)parent).isQualified() && parameters.isExtendedCompletion() && StringUtil.isNotEmpty(matcher.getPrefix())) {
@@ -578,8 +577,8 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
       new TypeArgumentCompletionProviderEx(false, session).addCompletions(parameters, new ProcessingContext(), result);
     }
 
-    Method addFunctionalVariants = getMethod(FunctionalExpressionCompletionProvider.class, void.class, "addFunctionalVariants", CompletionParameters.class, boolean.class, boolean.class, CompletionResultSet.class);
-    invokeMethod(addFunctionalVariants, parameters, false, false, result);
+    Method addFunctionalVariants = ReflectUtil.getMethod(FunctionalExpressionCompletionProvider.class, void.class, "addFunctionalVariants", CompletionParameters.class, boolean.class, boolean.class, CompletionResultSet.class);
+    ReflectUtil.invokeMethod(addFunctionalVariants, parameters, false, false, result);
 
     if (JavaSmartCompletionContributor.AFTER_NEW.accepts(position)) {
       new JavaInheritorsGetter(ConstructorInsertHandler.BASIC_INSTANCE).generateVariants(parameters, matcher, session);
@@ -601,8 +600,8 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
 
     if (parent instanceof PsiReferenceExpression) {
       final List<ExpectedTypeInfo> expected = Arrays.asList(ExpectedTypesProvider.getExpectedTypes((PsiExpression)parent, true));
-      Method decorateWithoutTypeCheck = getMethod(JavaSmartCompletionContributor.class, Consumer.class, "decorateWithoutTypeCheck", CompletionResultSet.class, Collection.class);
-      CollectConversionEx.addCollectConversion((PsiReferenceExpression)parent, expected, (Consumer<LookupElement>) invokeMethod(decorateWithoutTypeCheck, result, expected));
+      Method decorateWithoutTypeCheck = ReflectUtil.getMethod(JavaSmartCompletionContributor.class, Consumer.class, "decorateWithoutTypeCheck", CompletionResultSet.class, Collection.class);
+      CollectConversionEx.addCollectConversion((PsiReferenceExpression)parent, expected, (Consumer<LookupElement>) ReflectUtil.invokeMethod(decorateWithoutTypeCheck, result, expected));
     }
 
     if (IMPORT_REFERENCE.accepts(position)) {
@@ -788,8 +787,8 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
   private static void addExpressionVariants(@NotNull CompletionParameters parameters, PsiElement position, CompletionResultSet result) {
     if (JavaSmartCompletionContributor.INSIDE_EXPRESSION.accepts(position) &&
         !JavaKeywordCompletion.AFTER_DOT.accepts(position) && !shouldSuggestCast(parameters)) {
-      Method addExpectedTypeMembers = getMethod(JavaKeywordCompletion.class, void.class, "addExpectedTypeMembers", CompletionParameters.class, CompletionResultSet.class);
-      invokeMethod(addExpectedTypeMembers, parameters, result);
+      Method addExpectedTypeMembers = ReflectUtil.getMethod(JavaKeywordCompletion.class, void.class, "addExpectedTypeMembers", CompletionParameters.class, CompletionResultSet.class);
+      ReflectUtil.invokeMethod(addExpectedTypeMembers, parameters, result);
       if (SameSignatureCallParametersProviderEx.IN_CALL_ARGUMENT.accepts(position)) {
         new SameSignatureCallParametersProviderEx().addCompletions(parameters, new ProcessingContext(), result);
       }
@@ -797,44 +796,12 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
   }
 
   private static void addKeywords(CompletionParameters parameters, CompletionResultSet result, JavaCompletionSession session) {
-    Method addKeywords = getMethod(JavaKeywordCompletion.class, void.class, "addKeywords", CompletionParameters.class, JavaCompletionSession.class, Consumer.class);
-    invokeMethod(addKeywords, parameters, session, (Consumer<LookupElement>) element -> {
+    Method addKeywords = ReflectUtil.getMethod(JavaKeywordCompletion.class, void.class, "addKeywords", CompletionParameters.class, JavaCompletionSession.class, Consumer.class);
+    ReflectUtil.invokeMethod(addKeywords, parameters, session, (Consumer<LookupElement>) element -> {
       if (element.getLookupString().startsWith(result.getPrefixMatcher().getPrefix())) {
         result.addElement(element);
       }
     });
   }
 
-	public static Method getMethod(Class<?> parentClass, Class<?> returnType, String methodName, Class<?>... types) {
-		for (Method method : parentClass.getDeclaredMethods()) {
-			if (equalsTo(method, returnType, methodName, types)) return method;
-		}
-
-		return null;
-	}
-
-	public static boolean equalsTo(Method otherMethod, Class<?> returnType, String methodName, Class<?>... methodTypes) {
-		if (methodName != null && !methodName.equals(otherMethod.getName())) return false;
-
-		if (otherMethod.getParameterCount() != methodTypes.length) return false;			// not equal methods
-
-		if (!otherMethod.getReturnType().equals(returnType)) return false;
-
-		for (int i = 0; i < otherMethod.getParameterTypes().length; i++) {
-			if (otherMethod.getParameterTypes()[i] != methodTypes[i]) return false;
-		}
-
-		return true;
-	}
-
-	public static Object invokeMethod(Method method, Object... params) {
-		try {
-			method.setAccessible(true);
-			return method.invoke(null, params);
-		} catch (Exception e) {
-			if (e.getCause() != null && e.getCause().getClass() == ProcessCanceledException.class) throw (ProcessCanceledException) e.getCause();
-		}
-
-		return null;
-	}
 }

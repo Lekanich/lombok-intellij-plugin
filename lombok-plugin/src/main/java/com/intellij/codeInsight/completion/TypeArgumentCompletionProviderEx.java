@@ -15,6 +15,7 @@
  */
 package com.intellij.codeInsight.completion;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +51,8 @@ import com.intellij.psi.util.TypeConversionUtil;
 import com.intellij.util.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import static com.intellij.codeInsight.completion.ReflectUtil.getMethod;
+import static com.intellij.codeInsight.completion.ReflectUtil.invokeMethod;
 import static com.intellij.patterns.PsiJavaPatterns.psiElement;
 
 
@@ -121,7 +124,8 @@ class TypeArgumentCompletionProviderEx extends CompletionProvider<CompletionPara
       context.getDocument().deleteString(context.getStartOffset(), listEnd);
       for (int i = 0; i < myTypeItems.size(); i++) {
         PsiTypeLookupItem typeItem = myTypeItems.get(i);
-        CompletionUtil.emulateInsertion(context, context.getTailOffset(), typeItem);
+        Method emulateInsertion = getMethod(CompletionUtil.class, InsertionContext.class, "emulateInsertion", InsertionContext.class, int.class, LookupElement.class);
+        invokeMethod(emulateInsertion, context, context.getTailOffset(), typeItem);
         if (context.getTailOffset() < 0) {
           LOG.error("tail offset spoiled by " + typeItem);
           return;
@@ -216,7 +220,8 @@ class TypeArgumentCompletionProviderEx extends CompletionProvider<CompletionPara
       typeItems.add(PsiTypeLookupItem.createLookupItem(arg, context));
     }
 
-    boolean hasParameters = ConstructorInsertHandler.hasConstructorParameters(actualClass, context);
+    Method hasConstructorParameters = getMethod(ConstructorInsertHandler.class, boolean.class, "hasConstructorParameters", PsiClass.class, PsiElement.class);
+    boolean hasParameters = (boolean) invokeMethod(hasConstructorParameters, actualClass, context);
     TypeArgsLookupElement element = new TypeArgsLookupElement(typeItems, globalTail, hasParameters);
     element.registerSingleClass(mySession);
     resultSet.addElement(element);
