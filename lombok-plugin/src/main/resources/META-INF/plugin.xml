@@ -3,7 +3,7 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.1.7-1</version>
+  <version>1.1.8</version>
 
   <idea-version since-build="162"/>
 
@@ -231,6 +231,8 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.1.8</li>
+			<div> added FXProperty feature</div>
 		<li>1.1.6</li>
 			<div> fixed unused message on fields with FieldDefaults annotation</div>
 		<li>1.1.5</li>
