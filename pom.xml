@@ -7,7 +7,7 @@
   <groupId>lombok-intellij-plugin</groupId>
   <artifactId>lombok-intellij-plugin-parent</artifactId>
   <packaging>pom</packaging>
-  <version>1.1.7</version>
+  <version>1.1.8</version>
 
   <distributionManagement>
     <repository>
@@ -39,7 +39,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <maven.build.timestamp.format>yyyyMMddHHmm</maven.build.timestamp.format>
 
-    <lombok.version>2.16.7.14</lombok.version>
+    <lombok.version>2.16.8.14</lombok.version>
     <hrisey.version>0.3.1</hrisey.version>
 		<hamster.repository.id>internal</hamster.repository.id>
 		<hamster.repository.url>http://repu.huyaru.com/</hamster.repository.url>

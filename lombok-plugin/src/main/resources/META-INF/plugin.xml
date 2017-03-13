@@ -3,7 +3,7 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.1.7-1</version>
+  <version>1.1.8</version>
 
   <idea-version since-build="162"/>
 
@@ -63,6 +63,8 @@
     <annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokAnnotationAnnotator"/>
 		<annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokNonNullAnnotator"/>
 
+		<annotator language="JAVA" implementationClass="de.plushnikov.intellij.plugin.extension.LombokFXPropertyAnnotator"/>
+
 		<fileBasedIndex implementation="de.plushnikov.intellij.plugin.lombokconfig.LombokConfigIndex"/>
 
 		<custom.exception.handler implementation="de.plushnikov.intellij.plugin.handler.SneakyThrowsExceptionHandler"/>
@@ -116,6 +118,8 @@
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.GetterFieldProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.SetterFieldProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.field.WitherFieldProcessor"/>
+
+    <processor implementation="de.plushnikov.intellij.plugin.processor.field.FXPropertyProcessor"/>
 
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.DelegateMethodProcessor"/>
     <processor implementation="de.plushnikov.intellij.plugin.processor.method.DelegateExperimentalMethodProcessor"/>
@@ -202,6 +206,9 @@
       <action id="delombokSetter" class="de.plushnikov.intellij.plugin.action.delombok.DelombokSetterAction"
               text="@Setter" description="Action to replace lombok @Setter annotation with vanilla setter methods">
       </action>
+      <action id="delombokFXProperty" class="de.plushnikov.intellij.plugin.action.delombok.DelombokFXPropertyAction"
+              text="@FXProperty" description="Action to replace lombok @FXProperty annotation with vanilla accessors methods">
+      </action>
       <action id="delombokEqualsAndHashCode" class="de.plushnikov.intellij.plugin.action.delombok.DelombokEqualsAndHashCodeAction"
               text="@EqualsAndHashCode" description="Action to replace lombok @EqualsAndHashCode annotation with vanilla java methods">
       </action>
@@ -224,6 +231,8 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.1.8</li>
+			<div> added FXProperty feature</div>
 		<li>1.1.6</li>
 			<div> fixed unused message on fields with FieldDefaults annotation</div>
 		<li>1.1.5</li>
