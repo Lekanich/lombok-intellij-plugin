@@ -15,6 +15,10 @@
  */
 package com.intellij.codeInsight.completion;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import com.intellij.codeInsight.CharTailType;
 import com.intellij.codeInsight.ExpectedTypeInfo;
 import com.intellij.codeInsight.ExpectedTypesProvider;
@@ -28,22 +32,29 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.patterns.ElementPattern;
-import com.intellij.psi.*;
+import com.intellij.psi.JavaPsiFacade;
+import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiClassType;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiExpression;
+import com.intellij.psi.PsiJavaCodeReferenceElement;
+import com.intellij.psi.PsiNewExpression;
+import com.intellij.psi.PsiReferenceParameterList;
+import com.intellij.psi.PsiSubstitutor;
+import com.intellij.psi.PsiType;
+import com.intellij.psi.PsiTypeElement;
+import com.intellij.psi.PsiTypeParameter;
 import com.intellij.psi.util.InheritanceUtil;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiUtil;
 import com.intellij.psi.util.TypeConversionUtil;
-import com.intellij.util.Consumer;
-import com.intellij.util.Function;
 import com.intellij.util.ProcessingContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
+import static com.intellij.codeInsight.completion.ReflectUtil.getMethod;
+import static com.intellij.codeInsight.completion.ReflectUtil.invokeMethod;
 import static com.intellij.patterns.PsiJavaPatterns.psiElement;
+
 
 /**
 * @author peter
@@ -52,11 +63,108 @@ class TypeArgumentCompletionProviderEx extends CompletionProvider<CompletionPara
   static final ElementPattern<PsiElement> IN_TYPE_ARGS = psiElement().inside(PsiReferenceParameterList.class);
   private static final Logger LOG = Logger.getInstance("#com.intellij.codeInsight.completion.TypeArgumentCompletionProvider");
   private final boolean mySmart;
-  @Nullable private final InheritorsHolder myInheritors;
+  @Nullable private final JavaCompletionSession mySession;
 
-  TypeArgumentCompletionProviderEx(boolean smart, @Nullable InheritorsHolder inheritors) {
+  public static class TypeArgsLookupElement extends LookupElement {
+    private final String myLookupString;
+    private final List<PsiTypeLookupItem> myTypeItems;
+    private final TailType myGlobalTail;
+    private final boolean myHasParameters;
+
+    public TypeArgsLookupElement(List<PsiTypeLookupItem> typeItems, TailType globalTail, boolean hasParameters) {
+      myTypeItems = typeItems;
+      myGlobalTail = globalTail;
+      myHasParameters = hasParameters;
+      myLookupString = StringUtil.join(myTypeItems, item -> item.getType().getPresentableText(), ", ");
+    }
+
+    @NotNull
+    @Override
+    public Object getObject() {
+      return myTypeItems.get(0).getObject();
+    }
+
+    public void registerSingleClass(@Nullable JavaCompletionSession inheritors) {
+      if (inheritors != null && myTypeItems.size() == 1) {
+        PsiType type = myTypeItems.get(0).getType();
+        PsiClass aClass = PsiUtil.resolveClassInClassTypeOnly(type);
+        if (aClass != null && !aClass.hasTypeParameters()) {
+          myTypeItems.get(0).setShowPackage();
+          inheritors.registerClass(aClass);
+        }
+      }
+    }
+
+    @NotNull
+    @Override
+    public String getLookupString() {
+      return myLookupString;
+    }
+
+    @Override
+    public void renderElement(LookupElementPresentation presentation) {
+      myTypeItems.get(0).renderElement(presentation);
+      presentation.setItemText(getLookupString());
+      if (myTypeItems.size() > 1) {
+        presentation.setTailText(null);
+        presentation.setTypeText(null);
+      }
+    }
+
+    @Override
+    public void handleInsert(InsertionContext context) {
+      context.commitDocument();
+      PsiReferenceParameterList list = PsiTreeUtil.findElementOfClassAtOffset(context.getFile(), context.getStartOffset(), PsiReferenceParameterList.class, false);
+      PsiTypeElement[] typeElements = list != null ? list.getTypeParameterElements() : PsiTypeElement.EMPTY_ARRAY;
+      if (typeElements.length == 0) {
+        return;
+      }
+      int listEnd = typeElements[typeElements.length - 1].getTextRange().getEndOffset();
+      context.setTailOffset(listEnd);
+      context.getDocument().deleteString(context.getStartOffset(), listEnd);
+      for (int i = 0; i < myTypeItems.size(); i++) {
+        PsiTypeLookupItem typeItem = myTypeItems.get(i);
+        Method emulateInsertion = getMethod(CompletionUtil.class, InsertionContext.class, "emulateInsertion", InsertionContext.class, int.class, LookupElement.class);
+        invokeMethod(emulateInsertion, context, context.getTailOffset(), typeItem);
+        if (context.getTailOffset() < 0) {
+          LOG.error("tail offset spoiled by " + typeItem);
+          return;
+        }
+        context.setTailOffset(getTail(i == myTypeItems.size() - 1).processTail(context.getEditor(), context.getTailOffset()));
+      }
+      context.setAddCompletionChar(false);
+
+      context.commitDocument();
+
+      PsiElement leaf = context.getFile().findElementAt(context.getTailOffset() - 1);
+      if (psiElement().withParents(PsiReferenceParameterList.class, PsiJavaCodeReferenceElement.class, PsiNewExpression.class)
+        .accepts(leaf)) {
+        ParenthesesInsertHandler.getInstance(myHasParameters).handleInsert(context, this);
+        myGlobalTail.processTail(context.getEditor(), context.getTailOffset());
+      }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      TypeArgsLookupElement element = (TypeArgsLookupElement)o;
+
+      if (!myTypeItems.equals(element.myTypeItems)) return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return myTypeItems.hashCode();
+    }
+  }
+
+  TypeArgumentCompletionProviderEx(boolean smart, @Nullable JavaCompletionSession session) {
     mySmart = smart;
-    myInheritors = inheritors;
+    mySession = session;
   }
 
   @Override
@@ -112,23 +220,11 @@ class TypeArgumentCompletionProviderEx extends CompletionProvider<CompletionPara
       typeItems.add(PsiTypeLookupItem.createLookupItem(arg, context));
     }
 
-    boolean hasParameters = hasConstructorParameters(actualClass, context);
+    Method hasConstructorParameters = getMethod(ConstructorInsertHandler.class, boolean.class, "hasConstructorParameters", PsiClass.class, PsiElement.class);
+    boolean hasParameters = (boolean) invokeMethod(hasConstructorParameters, actualClass, context);
     TypeArgsLookupElement element = new TypeArgsLookupElement(typeItems, globalTail, hasParameters);
-    element.registerSingleClass(myInheritors);
+    element.registerSingleClass(mySession);
     resultSet.addElement(element);
-  }
-
-  static boolean hasConstructorParameters(PsiClass psiClass, @NotNull PsiElement place) {
-    final PsiResolveHelper resolveHelper = JavaPsiFacade.getInstance(place.getProject()).getResolveHelper();
-    boolean hasParams = false;
-    for (PsiMethod constructor : psiClass.getConstructors()) {
-      if (!resolveHelper.isAccessible(constructor, place, null)) continue;
-      if (constructor.getParameterList().getParametersCount() > 0) {
-        hasParams = true;
-        break;
-      }
-    }
-    return hasParams;
   }
 
   @Nullable
@@ -156,15 +252,12 @@ class TypeArgumentCompletionProviderEx extends CompletionProvider<CompletionPara
                                     final int parameterIndex) {
     final List<PsiClassType> typeList = Collections.singletonList((PsiClassType)TypeConversionUtil.typeParameterErasure(
       referencedClass.getTypeParameters()[parameterIndex]));
-    JavaInheritorsGetter.processInheritors(parameters, typeList, resultSet.getPrefixMatcher(), new Consumer<PsiType>() {
-      @Override
-      public void consume(final PsiType type) {
-        final PsiClass psiClass = PsiUtil.resolveClassInType(type);
-        if (psiClass == null) return;
+    JavaInheritorsGetter.processInheritors(parameters, typeList, resultSet.getPrefixMatcher(), type -> {
+      final PsiClass psiClass = PsiUtil.resolveClassInType(type);
+      if (psiClass == null) return;
 
-        resultSet.addElement(TailTypeDecorator.withTail(new JavaPsiClassReferenceElement(psiClass),
-                                                        getTail(parameterIndex == referencedClass.getTypeParameters().length - 1)));
-      }
+      resultSet.addElement(TailTypeDecorator.withTail(new JavaPsiClassReferenceElement(psiClass),
+                                                      getTail(parameterIndex == referencedClass.getTypeParameters().length - 1)));
     });
   }
 
@@ -203,106 +296,5 @@ class TypeArgumentCompletionProviderEx extends CompletionProvider<CompletionPara
     if(typeParameters.length <= parameterIndex) return null;
 
     return Pair.create(referencedClass, parameterIndex);
-  }
-
-  public static class TypeArgsLookupElement extends LookupElement {
-    private final String myLookupString;
-    private final List<PsiTypeLookupItem> myTypeItems;
-    private final TailType myGlobalTail;
-    private final boolean myHasParameters;
-
-    public TypeArgsLookupElement(List<PsiTypeLookupItem> typeItems, TailType globalTail, boolean hasParameters) {
-      myTypeItems = typeItems;
-      myGlobalTail = globalTail;
-      myHasParameters = hasParameters;
-      myLookupString = StringUtil.join(myTypeItems, new Function<PsiTypeLookupItem, String>() {
-        @Override
-        public String fun(PsiTypeLookupItem item) {
-          return item.getType().getPresentableText();
-        }
-      }, ", ");
-    }
-
-    @NotNull
-    @Override
-    public Object getObject() {
-      return myTypeItems.get(0).getObject();
-    }
-
-    public void registerSingleClass(@Nullable InheritorsHolder inheritors) {
-      if (inheritors != null && myTypeItems.size() == 1) {
-        PsiType type = myTypeItems.get(0).getType();
-        PsiClass aClass = PsiUtil.resolveClassInClassTypeOnly(type);
-        if (aClass != null && !aClass.hasTypeParameters()) {
-          myTypeItems.get(0).setShowPackage();
-          inheritors.registerClass(aClass);
-        }
-      }
-    }
-
-    @NotNull
-    @Override
-    public String getLookupString() {
-      return myLookupString;
-    }
-
-    @Override
-    public void renderElement(LookupElementPresentation presentation) {
-      myTypeItems.get(0).renderElement(presentation);
-      presentation.setItemText(getLookupString());
-      if (myTypeItems.size() > 1) {
-        presentation.setTailText(null);
-        presentation.setTypeText(null);
-      }
-    }
-
-    @Override
-    public void handleInsert(InsertionContext context) {
-      context.commitDocument();
-      PsiReferenceParameterList list = PsiTreeUtil.findElementOfClassAtOffset(context.getFile(), context.getStartOffset(), PsiReferenceParameterList.class, false);
-      PsiTypeElement[] typeElements = list != null ? list.getTypeParameterElements() : PsiTypeElement.EMPTY_ARRAY;
-      if (typeElements.length == 0) {
-        return;
-      }
-      int listEnd = typeElements[typeElements.length - 1].getTextRange().getEndOffset();
-      context.setTailOffset(listEnd);
-      context.getDocument().deleteString(context.getStartOffset(), listEnd);
-      for (int i = 0; i < myTypeItems.size(); i++) {
-        PsiTypeLookupItem typeItem = myTypeItems.get(i);
-        CompletionUtil.emulateInsertion(context, context.getTailOffset(), typeItem);
-        if (context.getTailOffset() < 0) {
-          LOG.error("tail offset spoiled by " + typeItem);
-          return;
-        }
-        context.setTailOffset(getTail(i == myTypeItems.size() - 1).processTail(context.getEditor(), context.getTailOffset()));
-      }
-      context.setAddCompletionChar(false);
-
-      context.commitDocument();
-
-      PsiElement leaf = context.getFile().findElementAt(context.getTailOffset() - 1);
-      if (psiElement().withParents(PsiReferenceParameterList.class, PsiJavaCodeReferenceElement.class, PsiNewExpression.class)
-        .accepts(leaf)) {
-        ParenthesesInsertHandler.getInstance(myHasParameters).handleInsert(context, this);
-        myGlobalTail.processTail(context.getEditor(), context.getTailOffset());
-      }
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
-
-      TypeArgsLookupElement element = (TypeArgsLookupElement)o;
-
-      if (!myTypeItems.equals(element.myTypeItems)) return false;
-
-      return true;
-    }
-
-    @Override
-    public int hashCode() {
-      return myTypeItems.hashCode();
-    }
   }
 }

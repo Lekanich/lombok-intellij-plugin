@@ -11,70 +11,56 @@ import com.intellij.psi.PsiForeachStatement;
 import com.intellij.psi.PsiLambdaExpression;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
-import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiParameterList;
 import com.intellij.psi.PsiVariable;
 import com.intellij.psi.util.PsiTreeUtil;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.Final;
 import lombok.experimental.FinalArgs;
 import lombok.experimental.NonFinal;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.Collection;
-
 import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.findAnnotation;
 import static de.plushnikov.intellij.plugin.util.PsiAnnotationUtil.isAnnotatedWith;
+
 
 /**
  * @author Plushnikov Michail
  */
 public class PsiFieldUtil {
-  @NotNull
-  public static Collection<PsiField> filterFieldsByModifiers(@NotNull PsiField[] psiFields, String... modifiers) {
-    Collection<PsiField> filterdFields = new ArrayList<PsiField>(psiFields.length);
-    for (PsiField psiField : psiFields) {
-      boolean addField = true;
-
-      PsiModifierList modifierList = psiField.getModifierList();
-      if (null != modifierList) {
-        for (String modifier : modifiers) {
-          addField &= !modifierList.hasModifierProperty(modifier);
-        }
-      }
-
-      if (addField) {
-        filterdFields.add(psiField);
-      }
-    }
-    return filterdFields;
-  }
 
   public static boolean isFinal(@NotNull PsiVariable variable) {
     return variable.hasModifierProperty(PsiModifier.FINAL) || isFinalByAnnotation(variable);
   }
 
-  public static boolean isFinalByAnnotation(@NotNull PsiVariable variable) {
-    if (isAnnotatedWith(variable, NonFinal.class)) return false;
+	public static boolean isFinalByAnnotation(@NotNull PsiVariable variable) {
+		if (isAnnotatedWith(variable, NonFinal.class)) {
+			return false;
+		}
 
-  // check Final.
-    PsiElement parent = variable.getParent();
-    PsiMethod method = PsiTreeUtil.getParentOfType(variable, PsiMethod.class);
-    if (method != null && isAnnotatedWith(method, Final.class)
-        && (parent instanceof PsiParameterList || parent instanceof PsiDeclarationStatement || parent instanceof PsiCatchSection || parent instanceof PsiForeachStatement)
-        && !(parent.getParent() instanceof PsiLambdaExpression) && !(parent.getParent() instanceof PsiForStatement)) return true;                                                             // for Final
-    if (method != null && isAnnotatedWith(method, FinalArgs.class) && parent instanceof PsiParameterList && !(parent.getParent() instanceof PsiLambdaExpression)) return true;                // for FinalArgs
+	// check Final
+		PsiElement parent = variable.getParent();
+		PsiMethod method = PsiTreeUtil.getParentOfType(variable, PsiMethod.class);
+		if (method != null && isAnnotatedWith(method, Final.class)
+			&& (parent instanceof PsiParameterList || parent instanceof PsiDeclarationStatement || parent instanceof PsiCatchSection || parent instanceof PsiForeachStatement)
+			&& !(parent.getParent() instanceof PsiLambdaExpression) && !(parent.getParent() instanceof PsiForStatement)) {
+			return true;                                                             // for Final
+		}
+		if (method != null && isAnnotatedWith(method, FinalArgs.class) && parent instanceof PsiParameterList && !(parent.getParent() instanceof PsiLambdaExpression)) {
+			return true;                // for FinalArgs
+		}
 
-    if (!(variable instanceof PsiField)) return false;
+		if (!(variable instanceof PsiField)) return false;
 
-    PsiClass containingClass = ((PsiField)variable).getContainingClass();
-    if (containingClass == null) return false;
+		PsiClass containingClass = ((PsiField) variable).getContainingClass();
+		if (containingClass == null) return false;
 
-    PsiAnnotation annotation = findAnnotation(containingClass, FieldDefaults.class);
-    if (annotation == null) return false;
+		if (findAnnotation(containingClass, Value.class) != null) return true;
 
-// if couldn't find annotation value get really final modifier of field
-    return PsiAnnotationUtil.getBooleanAnnotationValue(annotation, "makeFinal", variable.hasModifierProperty(PsiModifier.FINAL));
-  }
+		PsiAnnotation annotation = findAnnotation(containingClass, FieldDefaults.class);
+		if (annotation == null) return false;
+
+	// if couldn't find annotation value get really final modifier of field
+		return PsiAnnotationUtil.getBooleanAnnotationValue(annotation, "makeFinal", variable.hasModifierProperty(PsiModifier.FINAL));
+	}
 }

@@ -1,5 +1,7 @@
 package de.plushnikov.intellij.plugin.extension;
 
+import java.util.regex.Pattern;
+import com.intellij.codeInsight.daemon.JavaErrorMessages;
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoFilter;
 import com.intellij.codeInsight.daemon.impl.HighlightInfoType;
@@ -13,6 +15,7 @@ import com.intellij.psi.PsiField;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiModifier;
+import com.intellij.psi.PsiModifierList;
 import com.intellij.psi.PsiReference;
 import com.intellij.psi.PsiReferenceExpression;
 import com.intellij.psi.PsiType;
@@ -23,19 +26,19 @@ import com.siyeh.ig.psiutils.ClassUtils;
 import de.plushnikov.intellij.plugin.handler.LazyGetterHandler;
 import de.plushnikov.intellij.plugin.handler.OnXAnnotationHandler;
 import de.plushnikov.intellij.plugin.util.PsiAnnotationUtil;
+import de.plushnikov.intellij.plugin.util.ReflectionUtil;
 import lombok.AccessLevel;
+import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.regex.Pattern;
-
-import static com.siyeh.ig.psiutils.ClassUtils.getContainingClass;
 import static com.intellij.codeInsight.completion.LombokCompletionContributor.LombokElementFilter.getCallType;
+import static com.siyeh.ig.psiutils.ClassUtils.getContainingClass;
 import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getExtendingMethods;
 import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getType;
 import static de.plushnikov.intellij.plugin.handler.FieldDefaultsUtil.isAccessible;
 import static de.plushnikov.intellij.plugin.util.PsiClassUtil.hasParent;
+
 
 public class LombokHighlightErrorFilter implements HighlightInfoFilter {
   private static final Pattern UNINITIALIZED_MESSAGE = Pattern.compile("Variable '.+' might not have been initialized");
@@ -70,46 +73,82 @@ public class LombokHighlightErrorFilter implements HighlightInfoFilter {
     return true;
   }
 
-  private boolean isUnusedFieldDefaultsField(@NotNull HighlightInfo highlightInfo, @NotNull PsiFile file) {
-    PsiElement element = file.findElementAt(highlightInfo.getStartOffset());
-    if (element == null) return true;
+	private boolean isUnusedFieldDefaultsField(@NotNull HighlightInfo highlightInfo, @NotNull PsiFile file) {
+		PsiElement element = file.findElementAt(highlightInfo.getStartOffset());
+		if (element == null) return true;
 
-    PsiClass containingClass = getContainingClass(element);
-    if (containingClass == null) return true;
+		PsiClass containingClass = getContainingClass(element);
+		if (containingClass == null) return true;
 
-    PsiField field = PsiTreeUtil.getParentOfType(element, PsiField.class);
-    if (field == null) return true;
+		PsiField field = PsiTreeUtil.getParentOfType(element, PsiField.class);
+		if (field == null) return true;
 
-    PsiAnnotation annotation = PsiAnnotationUtil.findAnnotation(containingClass, FieldDefaults.class);
-    if (annotation == null || field.hasModifierProperty(PsiModifier.PUBLIC) || field.hasModifierProperty(PsiModifier.PROTECTED) || field.hasModifierProperty(PsiModifier.PRIVATE)) return true;
+	// explicit modifier
+		PsiModifierList modifierList = field.getModifierList();
+		if (modifierList == null) return true;
 
-    Query<PsiReference> search = ReferencesSearch.search(field, field.getResolveScope(), true);
-    boolean isUses = search.iterator().hasNext();                                                 // find some uses
-    if (!isUses) return true;                                                                     // remain info
+		if (modifierList.hasModifierProperty(PsiModifier.PUBLIC) || modifierList.hasExplicitModifier(PsiModifier.PROTECTED) || modifierList.hasExplicitModifier(PsiModifier.PRIVATE)) return true;
 
-    String level = PsiAnnotationUtil.getStringAnnotationValue(annotation, "level");
-    if (level == null) return true;
+	// get implicit access level
+		AccessLevel accessLevel = null;
+		PsiAnnotation valueAnnotation = PsiAnnotationUtil.findAnnotation(containingClass, Value.class);
+		if (valueAnnotation != null) {
+			accessLevel = AccessLevel.PRIVATE;
+		}
 
-    AccessLevel accessLevel = AccessLevel.valueOf(level);
-    if (accessLevel == AccessLevel.PUBLIC) return false;                                // remove this info
+		PsiAnnotation annotation = PsiAnnotationUtil.findAnnotation(containingClass, FieldDefaults.class);
+		if (annotation != null) {
+			String level = PsiAnnotationUtil.getStringAnnotationValue(annotation, "level");
+			if (level == null) return true;
 
-    if (accessLevel == AccessLevel.PROTECTED) {
-      for (PsiReference reference : search) {
-        PsiClass classWithUsed = PsiTreeUtil.getParentOfType(reference.getElement(), PsiClass.class);
-        if (classWithUsed == null) continue;
-        if (hasParent(classWithUsed, containingClass)) return false;
-      }
-    }
+			accessLevel = AccessLevel.valueOf(level);
+		}
 
-    if (accessLevel == AccessLevel.PRIVATE) {
-      for (PsiReference reference : search) {
-        PsiClass classWithUsed = PsiTreeUtil.getParentOfType(reference.getElement(), PsiClass.class);
-        if (containingClass.equals(classWithUsed)) return false;
-      }
-    }
+	// not found implicit access lvl from annotations
+		if (accessLevel == null) return true;
 
-    return true;                                  // also if accessLevel == AccessLevel.PACKAGE
-  }
+	// change description
+		changeUnusedDescription(highlightInfo, accessLevel, field.getName());
+
+	// find usages of field
+		Query<PsiReference> search = ReferencesSearch.search(field, field.getResolveScope(), true);
+		boolean isUses = search.iterator().hasNext();													// find some uses
+		if (!isUses) return true;																		// remain info
+
+		switch (accessLevel) {
+			case PUBLIC: return false;																	// remove info about unused
+
+			case PRIVATE:
+				for (PsiReference reference : search) {
+					PsiClass classWithUsed = PsiTreeUtil.getParentOfType(reference.getElement(), PsiClass.class);
+					if (containingClass.equals(classWithUsed)) return false;
+				}
+				break;
+
+			case PROTECTED:
+				for (PsiReference reference : search) {
+					PsiClass classWithUsed = PsiTreeUtil.getParentOfType(reference.getElement(), PsiClass.class);
+					if (classWithUsed == null) continue;
+
+					if (hasParent(classWithUsed, containingClass)) return false;
+				}
+				break;
+		}
+
+		return true;                                  // also if accessLevel == AccessLevel.PACKAGE
+	}
+
+	private static void changeUnusedDescription(@NotNull HighlightInfo highlightInfo, @NotNull AccessLevel accessLevel, @Nullable String fieldName) {
+		switch (accessLevel) {
+			case PUBLIC:
+			case PROTECTED:
+				ReflectionUtil.setFinalFieldPerReflection(HighlightInfo.class, highlightInfo, String.class, JavaErrorMessages.message("field.is.not.used", fieldName), false);
+				break;
+			case PRIVATE:
+				ReflectionUtil.setFinalFieldPerReflection(HighlightInfo.class, highlightInfo, String.class, JavaErrorMessages.message("private.field.is.not.used", fieldName), false);
+				break;
+		}
+	}
 
   private boolean isInaccessibleFieldDefaultsField(@NotNull HighlightInfo highlightInfo, @NotNull PsiFile file) {
     PsiElement element = file.findElementAt(highlightInfo.getStartOffset());

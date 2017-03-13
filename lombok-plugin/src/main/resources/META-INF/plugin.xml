@@ -3,9 +3,9 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.1.4</version>
+  <version>1.1.7-1</version>
 
-  <idea-version since-build="142.00"/>
+  <idea-version since-build="162"/>
 
   <description><![CDATA[
     A plugin that adds first-class support for Project Lombok
@@ -20,6 +20,9 @@
   <application-components>
     <component>
       <implementation-class>de.plushnikov.intellij.plugin.LombokLoader</implementation-class>
+    </component>
+    <component>
+      <implementation-class>de.plushnikov.intellij.plugin.ExtensionDisconnector</implementation-class>
     </component>
   </application-components>
 
@@ -70,6 +73,13 @@
     <renamePsiElementProcessor implementation="de.plushnikov.intellij.plugin.extension.LombokRenameFieldReferenceProcessor"/>
 
 		<java.elementFinder implementation="de.plushnikov.intellij.plugin.extension.LombokElementFinder" order="last"/>
+
+	<constantExpressionEvaluator language="JAVA" order="first" implementationClass="de.plushnikov.intellij.plugin.extension.LombokConstantEvaluator"/>
+
+    <!--Overwrite IntelliJ Diamond inspection, to filter out val declarations-->
+    <localInspection groupPath="Java" language="JAVA" shortName="Convert2Diamond" displayName="Explicit type can be replaced with &lt;&gt;"
+                     groupName="Java language level migration aids" enabledByDefault="true" level="WARNING"
+                     implementationClass="de.plushnikov.intellij.plugin.inspection.LombokExplicitTypeCanBeDiamondInspection" order="last"/>
   </extensions>
 
   <extensions defaultExtensionNs="lombok-plugin">
@@ -221,8 +231,16 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.1.6</li>
+			<div> fixed unused message on fields with FieldDefaults annotation</div>
+		<li>1.1.5</li>
+			<div> fixed constants evaluation for fieldDefaults constant</div>
 		<li>0.9.8
 				<ol>
+				     <li>Fixed #151: Builder issues with Accessors</li>
+				     <li>Fixed #153: IntelliJ produces warning when specifying generic type on val declaration</li>
+				     <li>Fixed #156: Exception in @Singular handling</li>
+				     <li>Fixed #165: Can't correctly resolve multiple @Builder methods in same class having partial implementations</li>
 				     <li>Fixed #172: "Lombok needs a default constructor in the base class" error in enum</li>
 				</ol>
 			</li>
@@ -242,14 +260,14 @@
 				    <li>Fixed #123: SpinAllocator has exhausted! Too many threads or you're going to get StackOverflow</li>
 				</ol>
 			</li>
-      <li>1.1.3</li>
-          <br> fix modifier scope for fielddefaults
-      <li>1.1.2</li>
-          <br> simple fix fielddefaults
-      <li>1.1.1</li>
-          <br> added quickFix to annotation for Final, FinalArgs and FieldDefaults
-      <li>1.1.0</li>
-          <br> up to 15 IDEA
+		<li>1.1.3</li>
+			<br> fix modifier scope for fielddefaults
+		<li>1.1.2</li>
+			<br> simple fix fielddefaults
+		<li>1.1.1</li>
+			<br> added quickFix to annotation for Final, FinalArgs and FieldDefaults
+		<li>1.1.0</li>
+			<br> up to 15 IDEA
 		<li>0.9.5
 				<ol>
 				    <li>Fixed #48: Importing @Builder generated builder classes does not work</li>

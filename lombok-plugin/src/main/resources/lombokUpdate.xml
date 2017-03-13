@@ -1,1 +1,6 @@
-<plugin name="Lombok Plugin(HC)" id="lombok-plugin" url="http://releases.huyaru.com/tools/lombok-plugin.jar" version="1.1.4"/>
+<plugin id="lombok-plugin" url="http://releases.huyaru.com/tools/lombok-plugin.jar" version="1.1.7-1">
+	<name>Lombok Plugin(HC)</name>
+	<description><![CDATA[Lombok Plugin (HC patched)]]></description>
+	<vendor url='http://www.hamstercoders.com/'>HC</vendor>
+	<idea-version since-build="162"/>
+</plugin>

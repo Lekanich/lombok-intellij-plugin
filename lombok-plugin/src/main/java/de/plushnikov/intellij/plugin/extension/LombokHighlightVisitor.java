@@ -1,5 +1,7 @@
 package de.plushnikov.intellij.plugin.extension;
 
+import java.util.Collection;
+import java.util.Map;
 import com.intellij.codeInsight.daemon.JavaErrorMessages;
 import com.intellij.codeInsight.daemon.impl.CheckLevelHighlightInfoHolder;
 import com.intellij.codeInsight.daemon.impl.HighlightInfo;
@@ -37,8 +39,6 @@ import gnu.trove.THashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.Map;
 
 /**
  * Modified copy of {@code com.intellij.codeInsight.daemon.impl.analysis.HighlightVisitorImpl}
