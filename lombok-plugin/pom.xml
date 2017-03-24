@@ -5,14 +5,14 @@
   <parent>
     <groupId>lombok-intellij-plugin</groupId>
     <artifactId>lombok-intellij-plugin-parent</artifactId>
-    <version>1.1.8</version>
+    <version>1.1.9</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>lombok-intellij-plugin</artifactId>
 
   <properties>
     <pack.name>lombok-plugin</pack.name>
-    <intellij.sdk.name>2016.2</intellij.sdk.name>
+    <intellij.sdk.name>2017.1</intellij.sdk.name>
   </properties>
 
   <dependencies>
@@ -52,37 +52,37 @@
     </dependency>
 
     <dependency>
-      <groupId>com.intellij</groupId>
+      <groupId>com.jetbrains.intellij.official</groupId>
       <artifactId>openapi</artifactId>
       <version>${intellij.sdk.name}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.intellij</groupId>
+      <groupId>com.jetbrains.intellij.official</groupId>
       <artifactId>extensions</artifactId>
       <version>${intellij.sdk.name}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.intellij</groupId>
+      <groupId>com.jetbrains.intellij.official</groupId>
       <artifactId>util</artifactId>
       <version>${intellij.sdk.name}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.intellij</groupId>
+      <groupId>com.jetbrains.intellij.official</groupId>
       <artifactId>annotations</artifactId>
       <version>${intellij.sdk.name}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.intellij</groupId>
+      <groupId>com.jetbrains.intellij.official</groupId>
       <artifactId>idea</artifactId>
       <version>${intellij.sdk.name}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.intellij</groupId>
+      <groupId>com.jetbrains.intellij.official</groupId>
       <artifactId>forms_rt</artifactId>
       <version>${intellij.sdk.name}</version>
       <scope>provided</scope>

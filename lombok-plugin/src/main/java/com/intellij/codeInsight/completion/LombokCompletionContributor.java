@@ -613,6 +613,9 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     addExpressionVariants(parameters, position, result);
   }
 
+    /**
+     * copy of {@link MethodReturnTypeProvider#addProbableReturnTypes(com.intellij.codeInsight.completion.CompletionParameters, com.intellij.util.Consumer)}
+     */
   static void addProbableReturnTypes(@NotNull CompletionParameters parameters, final Consumer<LookupElement> consumer) {
     final PsiElement position = parameters.getPosition();
     PsiMethod method = PsiTreeUtil.getParentOfType(position, PsiMethod.class);
@@ -633,7 +636,7 @@ public class LombokCompletionContributor extends JavaCompletionContributor {
     };
     for (PsiType type : getReturnTypeCandidates(method)) {
       eachProcessor.visitType(type);
-      ExpectedTypesProvider.processAllSuperTypes(type, eachProcessor, position.getProject(), ContainerUtil.<PsiType>newHashSet());
+      ExpectedTypesProvider.processAllSuperTypes(type, eachProcessor, position.getProject(), new HashSet<>(), new HashSet<>());
     }
   }
 
