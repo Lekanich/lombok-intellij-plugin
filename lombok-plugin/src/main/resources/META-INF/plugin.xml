@@ -3,9 +3,9 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.1.9</version>
+  <version>1.1.9-1</version>
 
-  <idea-version since-build="171" until-build="171.*"/>
+  <idea-version since-build="171.4424" until-build="171.*"/>
 
   <description><![CDATA[
     A plugin that adds first-class support for Project Lombok
