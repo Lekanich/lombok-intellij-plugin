@@ -257,11 +257,12 @@ public class FXPropertyProcessor extends AbstractFieldProcessor {
 	@Final @Nullable
 	private PsiType getPropertyInnerType(@NotNull PsiField psiField) {
 	// creates substitutor for the type of annotated field
-		PsiSubstitutor psiSubstitutor = createSubstitutor((PsiClassType) psiField.getType(), PsiSubstitutor.EMPTY);
-		PsiClass psiClass = PsiTypesUtil.getPsiClass(psiField.getType());
+        PsiType fieldType = psiField.getType();
+		PsiClass psiClass = PsiTypesUtil.getPsiClass(fieldType);
 		if (psiClass == null) return null;
 
 	// substitutes type of property value
+        PsiSubstitutor psiSubstitutor = createSubstitutor((PsiClassType) fieldType, PsiSubstitutor.EMPTY);
 		@NonFinal PsiType type = null;
 		for (PsiMethod method : psiClass.findMethodsByName(GET_METHOD, true)) {
 			if (method.getParameterList().getParametersCount() != 0) continue;

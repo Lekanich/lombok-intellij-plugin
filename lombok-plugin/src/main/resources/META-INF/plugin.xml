@@ -231,6 +231,8 @@
   <!--TODO @Builder is not supported on constructors with constructor type parameters..-->
   <change-notes><![CDATA[
 		<ul>
+		<li>1.1.9-1</li>
+			<div> hotfix </div>
 		<li>1.1.8</li>
 			<div> added FXProperty feature</div>
 		<li>1.1.6</li>
