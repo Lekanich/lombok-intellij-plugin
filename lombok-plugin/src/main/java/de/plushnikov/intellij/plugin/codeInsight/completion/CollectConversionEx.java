@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.codeInsight.completion;
+package de.plushnikov.intellij.plugin.codeInsight.completion;
 
 import java.util.Collection;
 import java.util.Set;
 import com.intellij.codeInsight.ExpectedTypeInfo;
+import com.intellij.codeInsight.completion.InsertionContext;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementPresentation;
 import com.intellij.codeInsight.lookup.TypedLookupItem;

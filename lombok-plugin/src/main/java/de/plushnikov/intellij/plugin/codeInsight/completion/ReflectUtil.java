@@ -1,4 +1,4 @@
-package com.intellij.codeInsight.completion;
+package de.plushnikov.intellij.plugin.codeInsight.completion;
 
 import java.lang.reflect.Method;
 import com.intellij.openapi.progress.ProcessCanceledException;
@@ -31,6 +31,17 @@ final public class ReflectUtil {
     }
 
     return true;
+  }
+
+  public static <R> R invokeVirtual(Method method, Object it, Object... params) {
+    try {
+      method.setAccessible(true);
+      return (R) method.invoke(it, params);
+    } catch (Exception e) {
+      if (e.getCause() != null && e.getCause().getClass() == ProcessCanceledException.class) throw (ProcessCanceledException) e.getCause();
+    }
+
+    return null;
   }
 
   public static Object invokeMethod(Method method, Object... params) {

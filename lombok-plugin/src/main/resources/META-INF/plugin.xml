@@ -3,9 +3,9 @@
   <id>lombok-plugin</id>
   <name>Lombok Plugin(HC)</name>
   <vendor url="https://github.com/mplushnikov/lombok-intellij-plugin" email="lombokplugin@plushnikov.de">Michail Plushnikov</vendor>
-  <version>1.1.9-1</version>
+  <version>1.1.10</version>
 
-  <idea-version since-build="171.4424" until-build="171.*"/>
+  <idea-version since-build="172.3544" until-build="172.*"/>
 
   <description><![CDATA[
     A plugin that adds first-class support for Project Lombok
@@ -52,7 +52,7 @@
     <completion.contributor language="Lombok.Config" implementationClass="de.plushnikov.intellij.plugin.language.LombokConfigCompletionContributor"/>
     <lang.commenter language="Lombok.Config" implementationClass="de.plushnikov.intellij.plugin.language.LombokConfigCommentor"/>
 
-    <completion.contributor language="JAVA" id="lombokContributor" implementationClass="com.intellij.codeInsight.completion.LombokCompletionContributor"
+    <completion.contributor language="JAVA" id="lombokContributor" implementationClass="de.plushnikov.intellij.plugin.codeInsight.completion.LombokCompletionContributor"
                             order="last, before legacy, before default, before javaClassName, before javaLegacy"/>
     <completion.contributor language="JAVA" id="primitiveLombokContributor" implementationClass="de.plushnikov.intellij.plugin.extension.LombokPrimitiveCompletionContributor"
                             order="last, before legacy, before default, before javaClassName, before lombokContributor"/>

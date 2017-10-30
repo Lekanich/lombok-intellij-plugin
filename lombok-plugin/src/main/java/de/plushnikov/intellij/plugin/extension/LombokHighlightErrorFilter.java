@@ -32,7 +32,7 @@ import lombok.Value;
 import lombok.experimental.FieldDefaults;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import static com.intellij.codeInsight.completion.LombokCompletionContributor.LombokElementFilter.getCallType;
+import static de.plushnikov.intellij.plugin.codeInsight.completion.LombokCompletionContributor.LombokElementFilter.getCallType;
 import static com.siyeh.ig.psiutils.ClassUtils.getContainingClass;
 import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getExtendingMethods;
 import static de.plushnikov.intellij.plugin.handler.ExtensionMethodUtil.getType;

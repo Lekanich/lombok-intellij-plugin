@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.codeInsight.completion;
+package de.plushnikov.intellij.plugin.codeInsight.completion;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import com.intellij.codeInsight.completion.*;
 import com.intellij.codeInsight.daemon.ImplicitUsageProvider;
 import com.intellij.psi.JavaRecursiveElementWalkingVisitor;
 import com.intellij.psi.PsiAssignmentExpression;
@@ -53,7 +54,7 @@ class CheckInitializedEx implements ElementFilter {
 
   static boolean isInsideConstructorCall(@NotNull PsiElement position) {
     return ExpressionUtils.isConstructorInvocation(PsiTreeUtil.getParentOfType(position, PsiMethodCallExpression.class)) &&
-           !JavaKeywordCompletion.AFTER_DOT.accepts(position);
+           !com.intellij.codeInsight.completion.JavaKeywordCompletion.AFTER_DOT.accepts(position);
   }
 
   private static boolean isInitializedImplicitly(PsiField field) {

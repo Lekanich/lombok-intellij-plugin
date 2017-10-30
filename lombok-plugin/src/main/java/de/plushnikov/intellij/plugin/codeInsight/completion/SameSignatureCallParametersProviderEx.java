@@ -13,11 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.intellij.codeInsight.completion;
+package de.plushnikov.intellij.plugin.codeInsight.completion;
 
 import java.util.Map;
 import java.util.Set;
 import com.intellij.codeInsight.ExpectedTypesProvider;
+import com.intellij.codeInsight.completion.CompletionParameters;
+import com.intellij.codeInsight.completion.CompletionProvider;
+import com.intellij.codeInsight.completion.CompletionResultSet;
+import com.intellij.codeInsight.completion.CompletionUtil;
+import com.intellij.codeInsight.completion.InsertHandler;
+import com.intellij.codeInsight.completion.InsertionContext;
+import com.intellij.codeInsight.completion.JavaCompletionUtil;
 import com.intellij.codeInsight.lookup.LookupElement;
 import com.intellij.codeInsight.lookup.LookupElementBuilder;
 import com.intellij.codeInsight.lookup.TailTypeDecorator;
