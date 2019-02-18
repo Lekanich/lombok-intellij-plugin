@@ -14,6 +14,11 @@ import org.jetbrains.annotations.NotNull;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Handler methods for {@link lombok.experimental.SuperBuilder}-processing
+ *
+ * @author Aleksandr Zhelezniak
+ */
 public class SuperBuilderHandler extends BuilderHandler {
   private static final String SELF_METHOD_NAME = "self";
   private static final String IMPL_BUILDER_END = "Impl";
@@ -103,7 +108,7 @@ public class SuperBuilderHandler extends BuilderHandler {
     builderClass.withMethods(getNoArgsConstructorProcessor().createNoArgsConstructor(builderClass, PsiModifier.PUBLIC, psiAnnotation));
 
     // create 'self' method
-    builderClass.addMethod(createAbstractSelfMethod(parentClass, builderClass, psiAnnotation, refToBuilderClassParam));
+    builderClass.addMethod(createAbstractSelfMethod(parentClass, psiAnnotation, refToBuilderClassParam));
 
     final List<BuilderInfo> builderInfos = createBuilderInfos(psiAnnotation, parentClass, null, builderClass);
 
@@ -135,7 +140,7 @@ public class SuperBuilderHandler extends BuilderHandler {
       .withModifier(PsiModifier.PUBLIC, PsiModifier.ABSTRACT);
   }
 
-  private PsiMethod createAbstractSelfMethod(@NotNull PsiClass parentClass, @NotNull PsiClass builderClass, @NotNull PsiAnnotation psiAnnotation, @NotNull PsiClass returnType) {
+  private PsiMethod createAbstractSelfMethod(@NotNull PsiClass parentClass, @NotNull PsiAnnotation psiAnnotation, @NotNull PsiClass returnType) {
     return new LombokLightMethodBuilder(parentClass.getManager(), SELF_METHOD_NAME)
       .withMethodReturnType(JavaPsiFacade.getElementFactory(parentClass.getProject()).createType(returnType))
       .withModifier(PsiModifier.PROTECTED, PsiModifier.ABSTRACT)
@@ -175,12 +180,6 @@ public class SuperBuilderHandler extends BuilderHandler {
     addTypeParameters(parentClass, null, method);
 
     return Optional.of(method);
-  }
-
-  @NotNull
-  private PsiCodeBlock createBuilderMethodCodeBlock(@NotNull PsiClass containingClass, @NotNull PsiType psiTypeWithGenerics) {
-    final String blockText = String.format("return new %s();", psiTypeWithGenerics.getPresentableText());
-    return PsiMethodUtil.createCodeBlockFromText(blockText, containingClass);
   }
 
   private PsiSubstitutor getBuilderSubstitutor(@NotNull PsiTypeParameterListOwner classOrMethodToBuild, @NotNull PsiClass innerClass) {

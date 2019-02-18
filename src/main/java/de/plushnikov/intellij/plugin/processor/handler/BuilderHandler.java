@@ -304,7 +304,7 @@ public class BuilderHandler {
   }
 
   @NotNull
-  private PsiCodeBlock createBuilderMethodCodeBlock(@NotNull PsiClass containingClass, @NotNull PsiType psiTypeWithGenerics) {
+  protected PsiCodeBlock createBuilderMethodCodeBlock(@NotNull PsiClass containingClass, @NotNull PsiType psiTypeWithGenerics) {
     final String blockText = String.format("return new %s();", psiTypeWithGenerics.getPresentableText());
     return PsiMethodUtil.createCodeBlockFromText(blockText, containingClass);
   }

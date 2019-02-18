@@ -15,9 +15,11 @@ import org.jetbrains.annotations.NonNls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * @author Plushnikov Michail
@@ -191,6 +193,14 @@ public class LombokLightMethodBuilder extends LightMethodBuilder {
     try {
       final StringBuilder methodTextDeclaration = new StringBuilder();
       methodTextDeclaration.append(getAllModifierProperties((LightModifierList) getModifierList()));
+
+      if (getTypeParameters().length != 0) {
+        methodTextDeclaration
+          .append(Arrays.stream(getTypeParameters())
+            .map(PsiElement::getText)
+            .collect(Collectors.joining(",", "<", ">")));
+      }
+
       PsiType returnType = getReturnType();
       if (null != returnType && returnType.isValid()) {
         methodTextDeclaration.append(returnType.getCanonicalText()).append(' ');
