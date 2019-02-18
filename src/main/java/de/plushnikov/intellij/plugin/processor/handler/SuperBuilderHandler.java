@@ -10,9 +10,9 @@ import de.plushnikov.intellij.plugin.psi.LombokLightMethodBuilder;
 import de.plushnikov.intellij.plugin.util.PsiClassUtil;
 import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Optional;
 
 public class SuperBuilderHandler extends BuilderHandler {
   private static final String SELF_METHOD_NAME = "self";
@@ -24,8 +24,13 @@ public class SuperBuilderHandler extends BuilderHandler {
     super(toStringProcessor, noArgsConstructorProcessor);
   }
 
+  public Optional<PsiClass> getExistInnerImplBuilderClass(@NotNull PsiClass psiClass, @NotNull PsiAnnotation psiAnnotation) {
+    final String builderClassName = getBuilderClassName(psiClass, psiAnnotation, null) + IMPL_BUILDER_END;
+    return PsiClassUtil.getInnerClassInternByName(psiClass, builderClassName);
+  }
+
   @NotNull
-  public LombokLightClassBuilder createSuperBuilderImplClass(@NotNull PsiClass parentClass, @NotNull LombokLightClassBuilder builderAbstractClass, @NotNull PsiAnnotation psiAnnotation) {
+  public LombokLightClassBuilder createSuperBuilderImplClass(@NotNull PsiClass parentClass, @NotNull PsiClass builderAbstractClass, @NotNull PsiAnnotation psiAnnotation) {
     final String builderClassName = getBuilderClassName(parentClass, psiAnnotation, null) + IMPL_BUILDER_END;
     final String builderClassQualifiedName = parentClass.getQualifiedName() + "." + builderClassName;
 
@@ -37,7 +42,7 @@ public class SuperBuilderHandler extends BuilderHandler {
       .withModifier(PsiModifier.PRIVATE)
       .withModifier(PsiModifier.STATIC)
       .withModifier(PsiModifier.FINAL);
-
+    builderClassImpl.withContainingClass(parentClass);
 
     final PsiSubstitutor substitutor = getBuilderSubstitutor(parentClass, builderClassImpl);
 
@@ -65,31 +70,32 @@ public class SuperBuilderHandler extends BuilderHandler {
   }
 
   @NotNull
-  public LombokLightClassBuilder createSuperBuilderAbstractClass(@NotNull PsiClass psiClass, @NotNull PsiAnnotation psiAnnotation) {
+  public LombokLightClassBuilder createSuperBuilderAbstractClass(@NotNull PsiClass parentClass, @NotNull PsiAnnotation psiAnnotation) {
     // create empty abstract builder class
-    LombokLightClassBuilder builderClass = createEmptyBuilderClass(psiClass, psiAnnotation);
+    LombokLightClassBuilder builderClass = createEmptyBuilderClass(parentClass, psiAnnotation);
+    builderClass.withContainingClass(parentClass);
     builderClass.withModifier(PsiModifier.ABSTRACT);
 
     // add generics
     int typeParamCountFromOriginalClass = builderClass.getTypeParameterList().getTypeParameters().length;
-    LightTypeParameterBuilder cParam = new LightTypeParameterBuilder(TYPE_PARAM_FOR_ORIGINAL_CLASS, builderClass, typeParamCountFromOriginalClass);
-    cParam.getExtendsList().addReference(psiClass);
+    LightTypeParameterBuilder refToOriginClassParam = new LightTypeParameterBuilder(TYPE_PARAM_FOR_ORIGINAL_CLASS, builderClass, typeParamCountFromOriginalClass);
+    refToOriginClassParam.getExtendsList().addReference(parentClass);
 
-    PsiElementFactory factory = JavaPsiFacade.getElementFactory(psiClass.getProject());
-    LightTypeParameterBuilder bParam = new LightTypeParameterBuilder(TYPE_PARAM_FOR_BUILDER, builderClass, typeParamCountFromOriginalClass + 1);
+    PsiElementFactory factory = JavaPsiFacade.getElementFactory(parentClass.getProject());
+    LightTypeParameterBuilder refToBuilderClassParam = new LightTypeParameterBuilder(TYPE_PARAM_FOR_BUILDER, builderClass, typeParamCountFromOriginalClass + 1);
 
     PsiType[] types = new PsiType[builderClass.getTypeParameters().length + 2];
     for (int i = 0; i < builderClass.getTypeParameters().length; i++) {
       types[i] = factory.createType(builderClass.getTypeParameters()[i]);
     }
-    types[types.length - 2] = factory.createType(bParam);
-    types[types.length - 1] = factory.createType(cParam);
+    types[types.length - 2] = factory.createType(refToBuilderClassParam);
+    types[types.length - 1] = factory.createType(refToOriginClassParam);
 
-    bParam.getExtendsList().addReference(factory.createType(builderClass, types));
+    refToBuilderClassParam.getExtendsList().addReference(factory.createType(builderClass, types));
 
-    LightTypeParameterListBuilder typeParameterList = new LightTypeParameterListBuilder(psiClass.getManager(), psiClass.getLanguage());
-    typeParameterList.addParameter(cParam);
-    typeParameterList.addParameter(bParam);
+    LightTypeParameterListBuilder typeParameterList = new LightTypeParameterListBuilder(parentClass.getManager(), parentClass.getLanguage());
+    typeParameterList.addParameter(refToOriginClassParam);
+    typeParameterList.addParameter(refToBuilderClassParam);
 
     builderClass.withParameterTypes(typeParameterList);
 
@@ -97,9 +103,9 @@ public class SuperBuilderHandler extends BuilderHandler {
     builderClass.withMethods(getNoArgsConstructorProcessor().createNoArgsConstructor(builderClass, PsiModifier.PUBLIC, psiAnnotation));
 
     // create 'self' method
-    builderClass.addMethod(createAbstractSelfMethod(psiClass, builderClass, psiAnnotation));
+    builderClass.addMethod(createAbstractSelfMethod(parentClass, builderClass, psiAnnotation, refToBuilderClassParam));
 
-    final List<BuilderInfo> builderInfos = createBuilderInfos(psiAnnotation, psiClass, null, builderClass);
+    final List<BuilderInfo> builderInfos = createBuilderInfos(psiAnnotation, parentClass, null, builderClass);
 
     // create builder fields
     builderInfos.stream()
@@ -112,7 +118,7 @@ public class SuperBuilderHandler extends BuilderHandler {
       .forEach(builderClass::withMethods);
 
     // create 'build' method
-    builderClass.addMethod(createAbstractBuildMethod(psiClass, builderClass, psiAnnotation));
+    builderClass.addMethod(createAbstractBuildMethod(parentClass, builderClass, psiAnnotation, refToOriginClassParam));
 
     // create 'toString' method
     builderClass.addMethod(createToStringMethod(psiAnnotation, builderClass));
@@ -120,18 +126,18 @@ public class SuperBuilderHandler extends BuilderHandler {
     return builderClass;
   }
 
-  private PsiMethod createAbstractBuildMethod(@NotNull PsiClass parentClass, @NotNull PsiClass builderClass, @NotNull PsiAnnotation psiAnnotation) {
+  private PsiMethod createAbstractBuildMethod(@NotNull PsiClass parentClass, @NotNull PsiClass builderClass, @NotNull PsiAnnotation psiAnnotation, @NotNull PsiClass returnType) {
     final String buildMethodName = getBuildMethodName(psiAnnotation);
     return new LombokLightMethodBuilder(parentClass.getManager(), buildMethodName)
       .withContainingClass(builderClass)
-      .withMethodReturnType(JavaPsiFacade.getElementFactory(parentClass.getProject()).createTypeFromText(TYPE_PARAM_FOR_ORIGINAL_CLASS, builderClass))
+      .withMethodReturnType(JavaPsiFacade.getElementFactory(parentClass.getProject()).createType(returnType))
       .withNavigationElement(psiAnnotation)
       .withModifier(PsiModifier.PUBLIC, PsiModifier.ABSTRACT);
   }
 
-  private PsiMethod createAbstractSelfMethod(@NotNull PsiClass parentClass, @NotNull PsiClass builderClass, @NotNull PsiAnnotation psiAnnotation) {
+  private PsiMethod createAbstractSelfMethod(@NotNull PsiClass parentClass, @NotNull PsiClass builderClass, @NotNull PsiAnnotation psiAnnotation, @NotNull PsiClass returnType) {
     return new LombokLightMethodBuilder(parentClass.getManager(), SELF_METHOD_NAME)
-      .withMethodReturnType(JavaPsiFacade.getElementFactory(parentClass.getProject()).createTypeFromText(TYPE_PARAM_FOR_BUILDER, builderClass))
+      .withMethodReturnType(JavaPsiFacade.getElementFactory(parentClass.getProject()).createType(returnType))
       .withModifier(PsiModifier.PROTECTED, PsiModifier.ABSTRACT)
       .withNavigationElement(psiAnnotation);
   }
@@ -142,5 +148,54 @@ public class SuperBuilderHandler extends BuilderHandler {
       .withModifier(PsiModifier.PROTECTED)
       .withNavigationElement(psiAnnotation)
       .withBody(PsiMethodUtil.createCodeBlockFromText("return this;", builderClass));
+  }
+
+  public Optional<PsiMethod> createBuilderMethodForClassIfNecessary(
+    @NotNull PsiClass parentClass,
+    @NotNull PsiClass abstractBuilderClass,
+    @NotNull PsiClass implBuilderClass,
+    @NotNull PsiAnnotation psiAnnotation) {
+
+    final String builderMethodName = getBuilderMethodName(psiAnnotation);
+    if (hasMethod(parentClass, builderMethodName)) {
+      return Optional.empty();
+    }
+
+    final PsiType psiImplTypeWithGenerics = PsiClassUtil.getTypeWithGenerics(implBuilderClass);
+    final PsiType psiAbstractTypeWithGenerics = getBuilderSubstitutor(parentClass, abstractBuilderClass)
+      .substitute(PsiClassUtil.getTypeWithGenerics(abstractBuilderClass));
+
+    final LombokLightMethodBuilder method = new LombokLightMethodBuilder(parentClass.getManager(), builderMethodName)
+      .withMethodReturnType(psiAbstractTypeWithGenerics)
+      .withContainingClass(parentClass)
+      .withNavigationElement(psiAnnotation)
+      .withModifier(PsiModifier.PUBLIC)
+      .withModifier(PsiModifier.STATIC)
+      .withBody(createBuilderMethodCodeBlock(parentClass, psiImplTypeWithGenerics));
+    addTypeParameters(parentClass, null, method);
+
+    return Optional.of(method);
+  }
+
+  @NotNull
+  private PsiCodeBlock createBuilderMethodCodeBlock(@NotNull PsiClass containingClass, @NotNull PsiType psiTypeWithGenerics) {
+    final String blockText = String.format("return new %s();", psiTypeWithGenerics.getPresentableText());
+    return PsiMethodUtil.createCodeBlockFromText(blockText, containingClass);
+  }
+
+  private PsiSubstitutor getBuilderSubstitutor(@NotNull PsiTypeParameterListOwner classOrMethodToBuild, @NotNull PsiClass innerClass) {
+    PsiSubstitutor substitutor = PsiSubstitutor.EMPTY;
+    if (innerClass.hasModifierProperty(PsiModifier.STATIC)) {
+      PsiTypeParameter[] typeParameters = classOrMethodToBuild.getTypeParameters();
+      PsiTypeParameter[] builderParams = innerClass.getTypeParameters();
+      for (int i = 0; i < typeParameters.length; i++) {
+        PsiTypeParameter typeParameter = typeParameters[i];
+        substitutor = substitutor.put(typeParameter, PsiSubstitutor.EMPTY.substitute(builderParams[i]));
+      }
+      for (int i = typeParameters.length; i < builderParams.length; i++) {
+        substitutor = substitutor.put(builderParams[i], PsiWildcardType.createUnbounded(innerClass.getManager()));
+      }
+    }
+    return substitutor;
   }
 }

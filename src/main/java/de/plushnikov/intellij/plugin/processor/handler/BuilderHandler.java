@@ -66,7 +66,7 @@ public class BuilderHandler {
     return noArgsConstructorProcessor;
   }
 
-  protected PsiSubstitutor getBuilderSubstitutor(@NotNull PsiTypeParameterListOwner classOrMethodToBuild, @NotNull PsiClass innerClass) {
+  private PsiSubstitutor getBuilderSubstitutor(@NotNull PsiTypeParameterListOwner classOrMethodToBuild, @NotNull PsiClass innerClass) {
     PsiSubstitutor substitutor = PsiSubstitutor.EMPTY;
     if (innerClass.hasModifierProperty(PsiModifier.STATIC)) {
       PsiTypeParameter[] typeParameters = classOrMethodToBuild.getTypeParameters();
@@ -207,7 +207,7 @@ public class BuilderHandler {
   }
 
   @NotNull
-  private static String getBuilderMethodName(@NotNull PsiAnnotation psiAnnotation) {
+  protected static String getBuilderMethodName(@NotNull PsiAnnotation psiAnnotation) {
     final String builderMethodName = PsiAnnotationUtil.getStringAnnotationValue(psiAnnotation, ANNOTATION_BUILDER_METHOD_NAME);
     return StringUtil.isEmptyOrSpaces(builderMethodName) ? BUILDER_METHOD_NAME : builderMethodName;
   }
@@ -234,7 +234,7 @@ public class BuilderHandler {
     return StringUtil.capitalize(rootBuilderClassName + BUILDER_CLASS_NAME);
   }
 
-  private boolean hasMethod(@NotNull PsiClass psiClass, @NotNull String builderMethodName) {
+  protected boolean hasMethod(@NotNull PsiClass psiClass, @NotNull String builderMethodName) {
     final Collection<PsiMethod> existingMethods = PsiClassUtil.collectClassStaticMethodsIntern(psiClass);
     return existingMethods.stream().map(PsiMethod::getName).anyMatch(builderMethodName::equals);
   }
@@ -512,7 +512,7 @@ public class BuilderHandler {
     return className + psiMethod.getName();
   }
 
-  private void addTypeParameters(PsiClass builderClass, PsiMethod psiMethod, LombokLightMethodBuilder methodBuilder) {
+  protected void addTypeParameters(PsiClass builderClass, PsiMethod psiMethod, LombokLightMethodBuilder methodBuilder) {
     final PsiTypeParameter[] psiTypeParameters;
     if (null == psiMethod || psiMethod.isConstructor()) {
       psiTypeParameters = builderClass.getTypeParameters();
