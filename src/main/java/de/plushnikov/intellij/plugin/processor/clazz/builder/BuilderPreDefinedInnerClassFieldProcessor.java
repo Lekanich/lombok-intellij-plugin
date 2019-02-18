@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Creates methods for a builder inner class if it is predefined.
+ * Creates fields for a builder inner class if it is predefined.
  *
  * @author Michail Plushnikov
  */

@@ -44,7 +44,7 @@ public class BuilderHandler {
   private static final String ANNOTATION_BUILDER_METHOD_NAME = "builderMethodName";
 
   private final static String BUILDER_CLASS_NAME = "Builder";
-  private final static String BUILD_METHOD_NAME = "build";
+  protected final static String BUILD_METHOD_NAME = "build";
   private final static String BUILDER_METHOD_NAME = "builder";
   private static final String TO_BUILDER_METHOD_NAME = "toBuilder";
   private static final String TO_BUILDER_ANNOTATION_KEY = "toBuilder";
@@ -62,7 +62,11 @@ public class BuilderHandler {
     this.noArgsConstructorProcessor = noArgsConstructorProcessor;
   }
 
-  private PsiSubstitutor getBuilderSubstitutor(@NotNull PsiTypeParameterListOwner classOrMethodToBuild, @NotNull PsiClass innerClass) {
+  public NoArgsConstructorProcessor getNoArgsConstructorProcessor() {
+    return noArgsConstructorProcessor;
+  }
+
+  protected PsiSubstitutor getBuilderSubstitutor(@NotNull PsiTypeParameterListOwner classOrMethodToBuild, @NotNull PsiClass innerClass) {
     PsiSubstitutor substitutor = PsiSubstitutor.EMPTY;
     if (innerClass.hasModifierProperty(PsiModifier.STATIC)) {
       PsiTypeParameter[] typeParameters = classOrMethodToBuild.getTypeParameters();
@@ -388,7 +392,7 @@ public class BuilderHandler {
   }
 
   @NotNull
-  private LombokLightClassBuilder createEmptyBuilderClass(@NotNull PsiClass psiClass, @NotNull PsiAnnotation psiAnnotation) {
+  protected LombokLightClassBuilder createEmptyBuilderClass(@NotNull PsiClass psiClass, @NotNull PsiAnnotation psiAnnotation) {
     return createBuilderClass(psiClass, psiClass, true, psiAnnotation);
   }
 
