@@ -53,7 +53,7 @@ public class SuperBuilderHandler extends BuilderHandler {
 
     // populate extend list
     PsiElementFactory factory = JavaPsiFacade.getElementFactory(parentClass.getProject());
-    PsiType[] types = new PsiType[builderAbstractClass.getTypeParameterList().getTypeParameters().length];
+    PsiType[] types = new PsiType[builderAbstractClass.getTypeParameters().length];
     for (int i = 0; i < parentClass.getTypeParameters().length; i++) {
       types[i] = factory.createType(parentClass.getTypeParameters()[i]);
     }
@@ -81,22 +81,28 @@ public class SuperBuilderHandler extends BuilderHandler {
     builderClass.withContainingClass(parentClass);
     builderClass.withModifier(PsiModifier.ABSTRACT);
 
+    PsiElementFactory factory = JavaPsiFacade.getElementFactory(parentClass.getProject());
+
     // add generics
     int typeParamCountFromOriginalClass = builderClass.getTypeParameterList().getTypeParameters().length;
     LightTypeParameterBuilder refToOriginClassParam = new LightTypeParameterBuilder(TYPE_PARAM_FOR_ORIGINAL_CLASS, builderClass, typeParamCountFromOriginalClass);
-    refToOriginClassParam.getExtendsList().addReference(parentClass);
 
-    PsiElementFactory factory = JavaPsiFacade.getElementFactory(parentClass.getProject());
+    PsiType[] typesClass = new PsiType[parentClass.getTypeParameters().length + 2];
+    for (int i = 0; i < parentClass.getTypeParameters().length; i++) {
+      typesClass[i] = factory.createType(parentClass.getTypeParameters()[i]);
+    }
+    refToOriginClassParam.getExtendsList().addReference(factory.createType(parentClass, typesClass));
+
     LightTypeParameterBuilder refToBuilderClassParam = new LightTypeParameterBuilder(TYPE_PARAM_FOR_BUILDER, builderClass, typeParamCountFromOriginalClass + 1);
 
-    PsiType[] types = new PsiType[builderClass.getTypeParameters().length + 2];
+    PsiType[] typesBuilder = new PsiType[builderClass.getTypeParameters().length + 2];
     for (int i = 0; i < builderClass.getTypeParameters().length; i++) {
-      types[i] = factory.createType(builderClass.getTypeParameters()[i]);
+      typesBuilder[i] = factory.createType(builderClass.getTypeParameters()[i]);
     }
-    types[types.length - 2] = factory.createType(refToBuilderClassParam);
-    types[types.length - 1] = factory.createType(refToOriginClassParam);
+    typesBuilder[typesBuilder.length - 2] = factory.createType(refToBuilderClassParam);
+    typesBuilder[typesBuilder.length - 1] = factory.createType(refToOriginClassParam);
 
-    refToBuilderClassParam.getExtendsList().addReference(factory.createType(builderClass, types));
+    refToBuilderClassParam.getExtendsList().addReference(factory.createType(builderClass, typesBuilder));
 
     LightTypeParameterListBuilder typeParameterList = new LightTypeParameterListBuilder(parentClass.getManager(), parentClass.getLanguage());
     typeParameterList.addParameter(refToOriginClassParam);
