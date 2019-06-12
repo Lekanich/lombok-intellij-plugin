@@ -57,9 +57,11 @@ public class SuperBuilderProcessor extends AbstractClassProcessor {
     PsiClass implBuilderClass = builderHandler.getExistInnerImplBuilderClass(psiClass, psiAnnotation)
       .orElseGet(() -> builderHandler.createSuperBuilderImplClass(psiClass, abstractBuilderClass, psiAnnotation));
 
+    // generate "builder()" method
     builderHandler.createBuilderMethodForClassIfNecessary(psiClass, abstractBuilderClass, implBuilderClass, psiAnnotation)
       .ifPresent(target::add);
 
+    // generate "toBuilder()" method
     builderHandler.createToBuilderMethodIfNecessary(psiClass, null, abstractBuilderClass, psiAnnotation)
       .ifPresent(target::add);
   }

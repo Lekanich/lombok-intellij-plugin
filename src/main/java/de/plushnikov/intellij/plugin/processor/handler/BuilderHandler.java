@@ -17,6 +17,7 @@ import de.plushnikov.intellij.plugin.util.PsiMethodUtil;
 import de.plushnikov.intellij.plugin.util.PsiTypeUtil;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import lombok.experimental.SuperBuilder;
 import lombok.experimental.Wither;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -66,7 +67,7 @@ public class BuilderHandler {
     return noArgsConstructorProcessor;
   }
 
-  private PsiSubstitutor getBuilderSubstitutor(@NotNull PsiTypeParameterListOwner classOrMethodToBuild, @NotNull PsiClass innerClass) {
+  protected PsiSubstitutor getBuilderSubstitutor(@NotNull PsiTypeParameterListOwner classOrMethodToBuild, @NotNull PsiClass innerClass) {
     PsiSubstitutor substitutor = PsiSubstitutor.EMPTY;
     if (innerClass.hasModifierProperty(PsiModifier.STATIC)) {
       PsiTypeParameter[] typeParameters = classOrMethodToBuild.getTypeParameters();
@@ -268,7 +269,9 @@ public class BuilderHandler {
       builderInfos.forEach(BuilderInfo::withObtainVia);
 
       final PsiType psiTypeWithGenerics;
-      if (null != psiMethod) {
+      if (SuperBuilder.class.getName().equals(psiAnnotation.getQualifiedName())) {
+        psiTypeWithGenerics = getBuilderSubstitutor(containingClass, builderPsiClass).substitute(PsiClassUtil.getTypeWithGenerics(builderPsiClass));
+      } else if (null != psiMethod) {
         psiTypeWithGenerics = calculateResultType(builderInfos, builderPsiClass, containingClass);
       } else {
         psiTypeWithGenerics = PsiClassUtil.getTypeWithGenerics(builderPsiClass);

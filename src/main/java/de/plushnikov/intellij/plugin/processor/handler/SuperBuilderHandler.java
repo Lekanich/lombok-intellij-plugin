@@ -116,7 +116,7 @@ public class SuperBuilderHandler extends BuilderHandler {
     // create 'self' method
     builderClass.addMethod(createAbstractSelfMethod(parentClass, psiAnnotation, refToBuilderClassParam));
 
-    final List<BuilderInfo> builderInfos = createBuilderInfos(psiAnnotation, parentClass, null, builderClass);
+    final List<BuilderInfo> builderInfos = createBuilderInfos(psiAnnotation, parentClass, null, refToBuilderClassParam);
 
     // create builder fields
     builderInfos.stream()
@@ -188,7 +188,7 @@ public class SuperBuilderHandler extends BuilderHandler {
     return Optional.of(method);
   }
 
-  private PsiSubstitutor getBuilderSubstitutor(@NotNull PsiTypeParameterListOwner classOrMethodToBuild, @NotNull PsiClass innerClass) {
+  protected PsiSubstitutor getBuilderSubstitutor(@NotNull PsiTypeParameterListOwner classOrMethodToBuild, @NotNull PsiClass innerClass) {
     PsiSubstitutor substitutor = PsiSubstitutor.EMPTY;
     if (innerClass.hasModifierProperty(PsiModifier.STATIC)) {
       PsiTypeParameter[] typeParameters = classOrMethodToBuild.getTypeParameters();
